@@ -1,20 +1,23 @@
 """
-Example for using the RFM69HCW Radio with Raspberry Pi.
+This is a program to read data sent by the Arduino program sketch_apr11a
 
 Learn Guide: https://learn.adafruit.com/lora-and-lorawan-for-raspberry-pi
 Author: Brent Rubell for Adafruit Industries
 Modified by Ralph Blach to to transmit and ack
+you will need to download font5x8.bin from https://github.com/adafruit/Adafruit_CircuitPython_framebuf/raw/master/examples/font5x8.bin
 """
 # Import Python System Libraries
 import time
 # Import Blinka Libraries
-import busio
-from digitalio import DigitalInOut, Direction, Pull
-import board
 # import the SSD1306 module.
 import adafruit_ssd1306
 # Import the RFM69 radio module.
 import adafruit_rfm69
+import busio
+import board
+from digitalio import DigitalInOut
+from digitalio import Direction
+from digitalio import Pull
 
 # Button A
 btnA = DigitalInOut(board.D5)
@@ -68,10 +71,8 @@ while True:
     # draw a box to clear the image
     # check for packet rx
     packet = rfm69.receive(with_header=True, rx_filter=1)
-    if packet is None:
-       pass
-    else:
-        # Display the packet text and rssi
+    if not None:
+        # Display the packet text
         header = packet[0:4]
         prev_packet = packet[4:]
         packet_text = str(prev_packet, "utf-8")
