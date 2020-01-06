@@ -3,7 +3,7 @@ This is a program to read data sent by the Arduino program sketch_apr11a
 
 Learn Guide: https://learn.adafruit.com/lora-and-lorawan-for-raspberry-pi
 Author: Brent Rubell for Adafruit Industries
-Modified by Ralph Blach to to transmit and ack
+Autonr: Ralph Blach reworked for my purposes
 you will need to download font5x8.bin from https://github.com/adafruit/Adafruit_CircuitPython_framebuf/raw/master/examples/font5x8.bin
 """
 # Import Python System Libraries
@@ -64,22 +64,35 @@ prev_packet = None
 #rfm69.encryption_key = b'\x01\x02\x03\x04\x05\x06\x07\x08\x01\x02\x03\x04\x05\x06\x07\x08'
 
 display.fill(0)
-display.text('RasPi Radio Remote location', 0, 0, 1)
+display.text('Remote Location', 0, 0, 1)
 display.show()
 while True:
+
     packet = None
     # draw a box to clear the image
     # check for packet rx
     packet = rfm69.receive(with_header=True, rx_filter=1)
-    if not None:
+    if packet is not None:
+        display.fill(0)
+        display.text('Remote Location', 0, 0, 1)
+        display.show()
         # Display the packet text
         header = packet[0:4]
         prev_packet = packet[4:]
         packet_text = str(prev_packet, "utf-8")
         packet_list = packet_text.split(",")
-        print('packet list={}'.format(packet_list))
-        display.text('lat = '+ packet_list[2] + packet_list[1], 0, 8, 1)
-        display.text('lon = ' + packet_list[4] + packet_list[3], 0, 16, 1)
+        # latitude has the form of Latitude (DDmm.mm)
+        lat_list = packet_list[1].split('.')
+        latitude_degrees = lat_list[0][0:2]
+        latitude_minutes = lat_list[0][2:4]
+        latitude = 'lat = ' + packet_list[2] + latitude_degrees + " " +latitude_minutes + '.' + lat_list[1]
+        # longitude has teh form Longitude (DDDmm.mm)
+        long_list = packet_list[3].split('.')
+        longitude_degrees = long_list[0][0:3]
+        longitude_minutes = long_list[0][3:5]
+        longitude = 'log = ' + packet_list[4] + longitude_degrees + " " + longitude_minutes + '.' + long_list[1]
+        display.text(latitude, 0, 8, 1)
+        display.text(longitude, 0, 16, 1)
         ack_data = bytes('a','utf-8')
         # create of tuple of to, from, id, status,
         send_tuple=(header[1], header[0], header[2], 0x80)
