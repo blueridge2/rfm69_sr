@@ -94,6 +94,7 @@ while True:
         packet_list = packet_text.split(",")
         callsign = packet_list[CALLSIGN]
         if packet_list[VALID] != 'A':
+            # the packet does not have a valid gps location
             display.text('not valid {}'.format(callsign), 0, 8, 1)
             continue
 
@@ -105,8 +106,6 @@ while True:
         # longitude has teh form Longitude (DDDmm.mm)
         long_degrees = packet_list[LONGITUDE][:3]
         long_minutes_seconds = packet_list[LONGITUDE][3:]
-
-        # print('long_list={}'.format(long_list))
 
         east_west = '' if packet_list[LONGITUDE_EW] == 'E' else '-'
         longitude = 'log = ' + east_west + long_degrees + " " + long_minutes_seconds
