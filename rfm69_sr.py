@@ -5,9 +5,16 @@ Learn Guide: https://learn.adafruit.com/lora-and-lorawan-for-raspberry-pi
 Author: Brent Rubell for Adafruit Industries
 Autonr: Ralph Blach reworked for my purposes
 you will need to download font5x8.bin from https://github.com/adafruit/Adafruit_CircuitPython_framebuf/raw/master/examples/font5x8.bin
+you could use wget https://github.com/adafruit/Adafruit_CircuitPython_framebuf/raw/master/examples/font5x8.bin
 
- valid packet minus the 4 byte header will look like ['kf4wbk', 'A', '4009.6037', 'N', '10503.7000', 'W']
- an invalid packet minus the 4 byte header will look like ['kf4wbk', 'V']
+The header is 4 bytes
+byte 0 is the target address,( this machince as the receiver)
+byte 1 is the source address( the sender/transmitter)
+byte 2 not used by this program( a counter set by the sender/transmitter)
+byte 3 status 0 = Data 0x80 is an ack
+
+valid packet minus the 4 byte header will look like ['kf4wbk', 'A', '4009.6037', 'N', '10503.7000', 'W']
+an invalid packet minus the 4 byte header will look like ['kf4wbk', 'V']
 """
 # Import Python System Libraries
 import time
