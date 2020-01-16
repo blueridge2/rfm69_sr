@@ -75,6 +75,7 @@ prev_packet = None
 display.fill(0)
 display.text('Remote Location', 0, 0, 1)
 display.show()
+counter = 0
 while True:
 
     packet = None
@@ -97,18 +98,18 @@ while True:
             continue
 
         # latitude has the form of Latitude (DDmm.mm)
-        lat_list = packet_list[LATITUDE].split('.')
-        latitude_degrees = lat_list[0][0:2]
-        latitude_minutes = lat_list[0][2:4]
-        latitidue_seconds = lat_list[1]
-        latitude = 'lat = ' + packet_list[LATITUDE_NS] + latitude_degrees + " " +latitude_minutes + '.' + latitidue_seconds
+        lat_degrees = packet_list[LATITUDE][:2]
+        lat_minutes_seconds = packet_list[LATITUDE][2:]
+        north_south = '' if packet_list[LATITUDE_NS] == 'N' else '-'
+        latitude = 'lat = ' + north_south + lat_degrees + " " +lat_minutes_seconds
         # longitude has teh form Longitude (DDDmm.mm)
-        long_list = packet_list[4].split('.')
+        long_degrees = packet_list[LONGITUDE][:3]
+        long_minutes_seconds = packet_list[LONGITUDE][3:]
+
         # print('long_list={}'.format(long_list))
-        longitude_degrees = long_list[0][0:3]
-        longitude_minutes = long_list[0][3:5]
-        longitude_seconds = long_list[1]
-        longitude = 'log = ' + packet_list[5] + longitude_degrees + " " + longitude_minutes + '.' + long_list[1]
+
+        east_west = '' if packet_list[LONGITUDE_EW] == 'E' else '-'
+        longitude = 'log = ' + east_west + long_degrees + " " + long_minutes_seconds
         display.text(latitude, 0, 8, 1)
         display.text(longitude, 0, 16, 1)
         display.text('valid, {}'.format(callsign),0, 24, 1)
