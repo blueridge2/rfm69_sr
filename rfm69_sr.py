@@ -5,6 +5,9 @@ Learn Guide: https://learn.adafruit.com/lora-and-lorawan-for-raspberry-pi
 Author: Brent Rubell for Adafruit Industries
 Autonr: Ralph Blach reworked for my purposes
 you will need to download font5x8.bin from https://github.com/adafruit/Adafruit_CircuitPython_framebuf/raw/master/examples/font5x8.bin
+
+ valid packet minus the 4 byte header will look like ['kf4wbk', 'A', '4009.6037', 'N', '10503.7000', 'W']
+ an invalid packet minus the 4 byte header will look like ['kf4wbk', 'V']
 """
 # Import Python System Libraries
 import time
@@ -19,6 +22,12 @@ from digitalio import DigitalInOut
 from digitalio import Direction
 from digitalio import Pull
 
+CALLSIGN = 0
+VALID = 1
+LATITUDE = 2
+LATITUDE_NS = 3
+LONGITUDE = 4
+LONGITUDE_EW = 5
 # Button A
 btnA = DigitalInOut(board.D5)
 btnA.direction = Direction.INPUT
@@ -72,27 +81,37 @@ while True:
     # draw a box to clear the image
     # check for packet rx
     packet = rfm69.receive(with_header=True, rx_filter=1)
+    # print('packet={}'.format(packet))
     if packet is not None:
         display.fill(0)
         display.text('Remote Location', 0, 0, 1)
         display.show()
         # Display the packet text
         header = packet[0:4]
-        prev_packet = packet[4:]
-        packet_text = str(prev_packet, "utf-8")
+        processed_packet = packet[4:]
+        packet_text = str(processed_packet, "utf-8")
         packet_list = packet_text.split(",")
+        callsign = packet_list[CALLSIGN]
+        if packet_list[VALID] != 'A':
+            display.text('not valid {}'.format(callsign), 0, 8, 1)
+            continue
+
         # latitude has the form of Latitude (DDmm.mm)
-        lat_list = packet_list[1].split('.')
+        lat_list = packet_list[LATITUDE].split('.')
         latitude_degrees = lat_list[0][0:2]
         latitude_minutes = lat_list[0][2:4]
-        latitude = 'lat = ' + packet_list[2] + latitude_degrees + " " +latitude_minutes + '.' + lat_list[1]
+        latitidue_seconds = lat_list[1]
+        latitude = 'lat = ' + packet_list[LATITUDE_NS] + latitude_degrees + " " +latitude_minutes + '.' + latitidue_seconds
         # longitude has teh form Longitude (DDDmm.mm)
-        long_list = packet_list[3].split('.')
+        long_list = packet_list[4].split('.')
+        # print('long_list={}'.format(long_list))
         longitude_degrees = long_list[0][0:3]
         longitude_minutes = long_list[0][3:5]
-        longitude = 'log = ' + packet_list[4] + longitude_degrees + " " + longitude_minutes + '.' + long_list[1]
+        longitude_seconds = long_list[1]
+        longitude = 'log = ' + packet_list[5] + longitude_degrees + " " + longitude_minutes + '.' + long_list[1]
         display.text(latitude, 0, 8, 1)
         display.text(longitude, 0, 16, 1)
+        display.text('valid, {}'.format(callsign),0, 24, 1)
         ack_data = bytes('a','utf-8')
         # create of tuple of to, from, id, status,
         send_tuple=(header[1], header[0], header[2], 0x80)
