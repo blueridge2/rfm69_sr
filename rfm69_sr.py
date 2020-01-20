@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+####################################################################################################################################
 # Copyright 2020 Ralph Carl Blach III
 # Other copyright by Brent Rubel for Adafruit industries.
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"),
@@ -11,25 +12,24 @@
 # OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
 # ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH
 # THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#######################################################################################################################################
 
-"""
-This is a program to read data sent by the Arduino program sketch_apr11a
+# This is a program to read data sent by the Arduino program sketch_apr11a
+# Learn Guide: https://learn.adafruit.com/lora-and-lorawan-for-raspberry-pi
+# Author: Brent Rubell for Adafruit Industries
+# Author: Ralph Blach reworked for my purposes
+# you will need to download font5x8.bin from https://github.com/adafruit/Adafruit_CircuitPython_framebuf/raw/master/examples/font5x8.bin
+# you could use  wget -O font5x8.bin https://github.com/adafruit/Adafruit_CircuitPython_framebuf/blob/master/examples/font5x8.bin?raw=true
 
-Learn Guide: https://learn.adafruit.com/lora-and-lorawan-for-raspberry-pi
-Author: Brent Rubell for Adafruit Industries
-Author: Ralph Blach reworked for my purposes
-you will need to download font5x8.bin from https://github.com/adafruit/Adafruit_CircuitPython_framebuf/raw/master/examples/font5x8.bin
-you could use  wget -O font5x8.bin https://github.com/adafruit/Adafruit_CircuitPython_framebuf/blob/master/examples/font5x8.bin?raw=true
+# The header is 4 bytes
+# byte 0 is the target address,( this machince as the receiver)
+# byte 1 is the source address( the sender/transmitter)
+# byte 2 not used by this program( a counter set by the sender/transmitter)
+# byte 3 status 0 = Data 0x80 is an ack
 
-The header is 4 bytes
-byte 0 is the target address,( this machince as the receiver)
-byte 1 is the source address( the sender/transmitter)
-byte 2 not used by this program( a counter set by the sender/transmitter)
-byte 3 status 0 = Data 0x80 is an ack
+# valid packet minus the 4 byte header will look like ['kf4wbk', 'A', '4009.6037', 'N', '10503.7000', 'W']
+# an invalid packet minus the 4 byte header will look like ['kf4wbk', 'V']
 
-valid packet minus the 4 byte header will look like ['kf4wbk', 'A', '4009.6037', 'N', '10503.7000', 'W']
-an invalid packet minus the 4 byte header will look like ['kf4wbk', 'V']
-"""
 # Import Python System Libraries
 import time
 import os
@@ -53,8 +53,6 @@ LATITUDE_NS = 3
 LONGITUDE = 4
 LONGITUDE_EW = 5
 
-
-
 class DisplayLocation(threading.Thread):
     """
     this is a thread class for the bluetooth radio
@@ -63,6 +61,7 @@ class DisplayLocation(threading.Thread):
     def __init__(self, name, *args, **kwargs):
         """
         this is the init class for the thread
+
         :param name: The name of the thread
         :param args: The args, it must be a tupple consistin go the lock variable, the shared data, shold be a string
         :param kwargs: Noe used
@@ -82,6 +81,7 @@ class DisplayLocation(threading.Thread):
     def run(self):
         """
         This overrides run on the threading class
+
         :return:
         """
         # Create the I2C interface.
