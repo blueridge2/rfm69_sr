@@ -53,6 +53,7 @@ LATITUDE_NS = 3
 LONGITUDE = 4
 LONGITUDE_EW = 5
 
+
 class DisplayLocation(threading.Thread):
     """
     this is a thread class for the bluetooth radio
@@ -77,7 +78,6 @@ class DisplayLocation(threading.Thread):
         self.lock_location_class = self.args[0]
         self.name = name
 
-
     def run(self):
         """
         This overrides run on the threading class
@@ -88,7 +88,7 @@ class DisplayLocation(threading.Thread):
         i2c = busio.I2C(board.SCL, board.SDA)
         # this is the degree sign for displaying to the display and is specific to the font5x8
         degree_sign_bonnet = u"\u00f8"
-        degree_sign_utf8 = u"\u00b0"
+        # degree_sign_utf8 = u"\u00b0"
         minutes_sign = u"\u0027"
 
         display = adafruit_ssd1306.SSD1306_I2C(128, 32, i2c, addr=0x3c)
@@ -97,8 +97,8 @@ class DisplayLocation(threading.Thread):
             display.fill(0)
             display.text('Remote Location', 0, 0, 1)
             display.show()
+
             packet_list = self.lock_location_class.gps_location
-            print('packet list = {}'.format(packet_list))
             if packet_list is None:
                 display.text('not valid {}'.format('no packet'), 0, 8, 1)
                 display.show()
@@ -115,22 +115,23 @@ class DisplayLocation(threading.Thread):
             lat_minutes_seconds = packet_list[LATITUDE][2:]
             north_south = '' if packet_list[LATITUDE_NS] == 'N' else '-'
             latitude = 'lat = ' + north_south + lat_degrees + degree_sign_bonnet + lat_minutes_seconds + minutes_sign
-            latitude_to_bluetooth = north_south + lat_degrees + degree_sign_utf8 + lat_minutes_seconds + minutes_sign
+            # latitude_to_bluetooth = north_south + lat_degrees + degree_sign_utf8 + lat_minutes_seconds + minutes_sign
             # longitude has teh form Longitude (DDDmm.mm)
             long_degrees = packet_list[LONGITUDE][:3]
             long_minutes_seconds = packet_list[LONGITUDE][3:]
 
             east_west = '' if packet_list[LONGITUDE_EW] == 'E' else '-'
             longitude = 'log = ' + east_west + long_degrees + degree_sign_bonnet + long_minutes_seconds + minutes_sign
-            longitude_to_bluetooth = east_west + long_degrees + degree_sign_utf8 + long_minutes_seconds + minutes_sign
+            # longitude_to_bluetooth = east_west + long_degrees + degree_sign_utf8 + long_minutes_seconds + minutes_sign
             display.text(latitude, 0, 8, 1)
             display.text(longitude, 0, 16, 1)
             display.text('valid, {} {:01x}'.format(callsign, counter & 0xf), 0, 24, 1)
             display.show()
-            counter = counter + 1 if counter <16 else 0
+            counter = counter + 1 if counter < 16 else 0
             time.sleep(1)
 
-class RecieveRFM69Data(threading.Thread):
+
+class ReceiveRFM69Data(threading.Thread):
     def __init__(self, name, *args, **kwargs):
         """
         The init function is empty for now.
@@ -141,7 +142,7 @@ class RecieveRFM69Data(threading.Thread):
         :param kwargs: not used at this time
 
         """
-        super(RecieveRFM69Data, self).__init__(name=name, args=args, kwargs=kwargs)
+        super(ReceiveRFM69Data, self).__init__(name=name, args=args, kwargs=kwargs)
         self.name = name
         self.args = args
         self.kwargs = kwargs
@@ -180,7 +181,7 @@ class RecieveRFM69Data(threading.Thread):
         RESET = DigitalInOut(board.D25)
         spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
         rfm69 = adafruit_rfm69.RFM69(spi, CS, RESET, 433.0, sync_word=b'\x2D\xD4')
-        prev_packet = None
+        # prev_packet = None
 
         while True:
             packet = None
@@ -204,18 +205,21 @@ class RecieveRFM69Data(threading.Thread):
                 ack_tuple = (header[1], header[0], header[2], 0x80)
                 rfm69.send(ack_data, tx_header=ack_tuple)
 
-
             if not btnA.value:
                 # Send Button A
-                button_a_data = bytes("Button A!\r\n", "utf-8")
+                # button_a_data = bytes("Button A!\r\n", "utf-8")
+                pass
             elif not btnB.value:
                 # Send Button B
-                button_b_data = bytes("Button B!\r\n", "utf-8")
+                # button_b_data = bytes("Button B!\r\n", "utf-8")
+                pass
             elif not btnC.value:
                 # Send Button C
-                button_c_data = bytes("Button C!\r\n", "utf-8")
+                # button_c_data = bytes("Button C!\r\n", "utf-8")
+                pass
 
             time.sleep(1)
+
 
 if __name__ == "__main__":
     if not os.path.exists('font5x8.bin'):
@@ -224,11 +228,10 @@ if __name__ == "__main__":
                 https://github.com/adafruit/Adafruit_CircuitPython_framebuf/blob/master/examples/font5x8.bin?raw=true to download')
         exit(-1)
     gps_lock_and_location = gps_lock_and_location.GpsLockLocation()
-    run_radio = RecieveRFM69Data('rfm_radio', gps_lock_and_location, )
+    run_radio = ReceiveRFM69Data('rfm_radio', gps_lock_and_location, )
     run_display = DisplayLocation('display data', gps_lock_and_location, )
     run_radio.start()
     run_display.start()
 
     run_radio.join()
     run_display.join()
-
