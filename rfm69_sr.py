@@ -33,6 +33,7 @@ an invalid packet minus the 4 byte header will look like ['kf4wbk', 'V']
 # Import Python System Libraries
 import time
 import os
+import threading
 # Import Blinka Libraries
 # import the SSD1306 module.
 import adafruit_ssd1306
@@ -43,6 +44,7 @@ import board
 from digitalio import DigitalInOut
 from digitalio import Direction
 from digitalio import Pull
+import gps_lock_and_location
 
 CALLSIGN = 0
 VALID = 1
@@ -51,22 +53,109 @@ LATITUDE_NS = 3
 LONGITUDE = 4
 LONGITUDE_EW = 5
 
-class RecieveRFM69Data(object):
-    def __init__(self, disaply_lock_data=None, bluetooth_lock_data=None):
+
+
+class DisplayLocation(threading.Thread):
+    """
+    this is a thread class for the bluetooth radio
+
+    """
+    def __init__(self, name, *args, **kwargs):
+        """
+        this is the init class for the thread
+        :param name: The name of the thread
+        :param args: The args, it must be a tupple consistin go the lock variable, the shared data, shold be a string
+        :param kwargs: Noe used
+        """
+        super(DisplayLocation, self).__init__(name=name, args=args, kwargs=kwargs)
+
+        if args is None:
+            raise ValueError('Args cannot be None')
+
+        if args is None:
+            raise ValueError()
+        self.args = args
+        self.lock_location_class = self.args[0]
+        self.name = name
+
+
+    def run(self):
+        """
+        This overrides run on the threading class
+        :return:
+        """
+        # Create the I2C interface.
+        i2c = busio.I2C(board.SCL, board.SDA)
+        # this is the degree sign for displaying to the display and is specific to the font5x8
+        degree_sign_bonnet = u"\u00f8"
+        degree_sign_utf8 = u"\u00b0"
+        minutes_sign = u"\u0027"
+
+        display = adafruit_ssd1306.SSD1306_I2C(128, 32, i2c, addr=0x3c)
+        counter = 0
+        while True:
+            display.fill(0)
+            display.text('Remote Location', 0, 0, 1)
+            display.show()
+            packet_list = self.lock_location_class.gps_location
+            print('packet list = {}'.format(packet_list))
+            if packet_list is None:
+                display.text('not valid {}'.format('no packet'), 0, 8, 1)
+                display.show()
+                continue
+            else:
+                callsign = packet_list[CALLSIGN]
+                if packet_list[VALID] != 'A':
+                    # the packet does not have a valid gps location
+                    display.text('not valid {}'.format(callsign), 0, 8, 1)
+                    display.show()
+                    continue
+            # latitude has the form of Latitude (DDmm.mm)
+            lat_degrees = packet_list[LATITUDE][:2]
+            lat_minutes_seconds = packet_list[LATITUDE][2:]
+            north_south = '' if packet_list[LATITUDE_NS] == 'N' else '-'
+            latitude = 'lat = ' + north_south + lat_degrees + degree_sign_bonnet + lat_minutes_seconds + minutes_sign
+            latitude_to_bluetooth = north_south + lat_degrees + degree_sign_utf8 + lat_minutes_seconds + minutes_sign
+            # longitude has teh form Longitude (DDDmm.mm)
+            long_degrees = packet_list[LONGITUDE][:3]
+            long_minutes_seconds = packet_list[LONGITUDE][3:]
+
+            east_west = '' if packet_list[LONGITUDE_EW] == 'E' else '-'
+            longitude = 'log = ' + east_west + long_degrees + degree_sign_bonnet + long_minutes_seconds + minutes_sign
+            longitude_to_bluetooth = east_west + long_degrees + degree_sign_utf8 + long_minutes_seconds + minutes_sign
+            display.text(latitude, 0, 8, 1)
+            display.text(longitude, 0, 16, 1)
+            display.text('valid, {} {:01x}'.format(callsign, counter & 0xf), 0, 24, 1)
+            display.show()
+            counter = counter + 1 if counter <16 else 0
+            time.sleep(1)
+
+class RecieveRFM69Data(threading.Thread):
+    def __init__(self, name, *args, **kwargs):
         """
         The init function is empty for now.
+
+        :param name: name the name of the thread
+        :param location_data: the class that contains the gps location
+        :param args: the tuple containing the gps lock and data
+        :param kwargs: not used at this time
+
         """
-        self.display_lock_data = disaply_lock_data
-        self.bluetooth_lock_data = bluetooth_lock_data
+        super(RecieveRFM69Data, self).__init__(name=name, args=args, kwargs=kwargs)
+        self.name = name
+        self.args = args
+        self.kwargs = kwargs
+        if args is None:
+            raise ValueError('args cannot be None')
+        print('args = {}'.format(args))
+        self.lock_location_class = self.args[0]
 
     def run(self):
         """
         This runs the radio
 
-        It does not exit tand it does not return
+        It does not exit and it does not return
         """
-
-
         btnA = DigitalInOut(board.D5)
         btnA.direction = Direction.INPUT
         btnA.pull = Pull.UP
@@ -86,26 +175,6 @@ class RecieveRFM69Data(object):
         gpio22.direction = Direction.INPUT
         gpio22.pull = Pull.UP
 
-        # Create the I2C interface.
-        i2c = busio.I2C(board.SCL, board.SDA)
-        # this is the degree sign for dosplaying to the display and is specific to the font5x8
-        degree_sign_bonnet = u"\u00f8"
-        degree_sign_utf8 = u"\u00b0"
-        minutes_sign = u"\u0027"
-        if not os.path.exists('font5x8.bin'):
-            print('the file font5x8.bin is not present in the current directory.')
-            print('use the command wget -O font5x8.bin \
-            https://github.com/adafruit/Adafruit_CircuitPython_framebuf/blob/master/examples/font5x8.bin?raw=true to download')
-            exit(-1)
-        # 128x32 OLED Display
-        display = adafruit_ssd1306.SSD1306_I2C(128, 32, i2c, addr=0x3c)
-
-        # Clear the display.
-        display.fill(0)
-        display.show()
-        width = display.width
-        height = display.height
-
         # Configure Packet Radio
         CS = DigitalInOut(board.CE1)
         RESET = DigitalInOut(board.D25)
@@ -113,76 +182,53 @@ class RecieveRFM69Data(object):
         rfm69 = adafruit_rfm69.RFM69(spi, CS, RESET, 433.0, sync_word=b'\x2D\xD4')
         prev_packet = None
 
-        display.fill(0)
-        display.text('Remote Location', 0, 0, 1)
-        display.show()
-
         while True:
             packet = None
             # draw a box to clear the image
             # check for packet rx
             packet = rfm69.receive(with_header=True, rx_filter=1)
             if packet is not None:
-                display.fill(0)
-                display.text('Remote Location', 0, 0, 1)
-                display.show()
                 # Display the packet text
                 header = packet[0:4]
                 processed_packet = packet[4:]
                 packet_text = str(processed_packet, "utf-8")
-                packet_list = packet_text.split(",")
-                callsign = packet_list[CALLSIGN]
+                packet_list = packet_text.split(',')
+                self.lock_location_class.gps_location = packet_list
                 if packet_list[VALID] != 'A':
                     # the packet does not have a valid gps location
-                    display.text('not valid {}'.format(callsign), 0, 8, 1)
+                    self.lock_location_class.gps_location = 'not valid'
                     continue
-
-                # latitude has the form of Latitude (DDmm.mm)
-                lat_degrees = packet_list[LATITUDE][:2]
-                lat_minutes_seconds = packet_list[LATITUDE][2:]
-                north_south = '' if packet_list[LATITUDE_NS] == 'N' else '-'
-                latitude = 'lat = ' + north_south + lat_degrees + degree_sign_bonnet + lat_minutes_seconds + minutes_sign
-                latitude_to_bluetooth = north_south + lat_degrees + degree_sign_utf8 + lat_minutes_seconds + minutes_sign
                 # longitude has teh form Longitude (DDDmm.mm)
-                long_degrees = packet_list[LONGITUDE][:3]
-                long_minutes_seconds = packet_list[LONGITUDE][3:]
-
-                east_west = '' if packet_list[LONGITUDE_EW] == 'E' else '-'
-                longitude = 'log = ' + east_west + long_degrees + degree_sign_bonnet + long_minutes_seconds + minutes_sign
-                longitude_to_bluetooth = east_west + long_degrees + degree_sign_utf8 + long_minutes_seconds + minutes_sign
-                display.text(latitude, 0, 8, 1)
-                display.text(longitude, 0, 16, 1)
-                display.text('valid, {} {:01x}'.format(callsign, header[2] & 0xf), 0, 24, 1)
                 ack_data = bytes('a', 'utf-8')
                 # create of tuple of to, from, id, status,
-                send_tuple = (header[1], header[0], header[2], 0x80)
+                ack_tuple = (header[1], header[0], header[2], 0x80)
+                rfm69.send(ack_data, tx_header=ack_tuple)
 
-                rfm69.send(ack_data, tx_header=send_tuple)
-                print('{} {}'.format(latitude_to_bluetooth, longitude_to_bluetooth))
-                time.sleep(1)
 
             if not btnA.value:
                 # Send Button A
-                display.fill(0)
                 button_a_data = bytes("Button A!\r\n", "utf-8")
-                rfm69.send(button_a_data)
-                display.text('Sent Button A!', 25, 15, 1)
             elif not btnB.value:
                 # Send Button B
-                display.fill(0)
                 button_b_data = bytes("Button B!\r\n", "utf-8")
-                rfm69.send(button_b_data)
-                display.text('Sent Button B!', 25, 15, 1)
             elif not btnC.value:
                 # Send Button C
-                display.fill(0)
                 button_c_data = bytes("Button C!\r\n", "utf-8")
-                rfm69.send(button_c_data)
-                display.text('Sent Button C!', 25, 15, 1)
 
-            display.show()
             time.sleep(1)
 
 if __name__ == "__main__":
-    run_radio = RecieveRFM69Data()
-    run_radio.run()
+    if not os.path.exists('font5x8.bin'):
+        print('the file font5x8.bin is not present in the current directory.')
+        print('use the command wget -O font5x8.bin \
+                https://github.com/adafruit/Adafruit_CircuitPython_framebuf/blob/master/examples/font5x8.bin?raw=true to download')
+        exit(-1)
+    gps_lock_and_location = gps_lock_and_location.GpsLockLocation()
+    run_radio = RecieveRFM69Data('rfm_radio', gps_lock_and_location, )
+    run_display = DisplayLocation('display data', gps_lock_and_location, )
+    run_radio.start()
+    run_display.start()
+
+    run_radio.join()
+    run_display.join()
+
