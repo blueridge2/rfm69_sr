@@ -15,9 +15,9 @@
 import threading
 
 
-class GpsLockLocation(object):
+class GpsLockLocation():
     """
-    A class to contain common data for the lock class and locatin
+    A class to contain common data for the lock class and location
     """
     def __init__(self):
         """
