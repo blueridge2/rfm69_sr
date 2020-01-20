@@ -1,9 +1,23 @@
+#!/usr/bin/env python
+# Copyright 2020 Ralph Carl Blach III
+# Other copyright by Brent Rubel for Adafruit industries.
+# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute,
+# sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
+# subject to the following conditions:
+# The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
+# ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH
+# THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 """
 This is a program to read data sent by the Arduino program sketch_apr11a
 
 Learn Guide: https://learn.adafruit.com/lora-and-lorawan-for-raspberry-pi
 Author: Brent Rubell for Adafruit Industries
-Autonr: Ralph Blach reworked for my purposes
+Author: Ralph Blach reworked for my purposes
 you will need to download font5x8.bin from https://github.com/adafruit/Adafruit_CircuitPython_framebuf/raw/master/examples/font5x8.bin
 you could use  wget -O font5x8.bin https://github.com/adafruit/Adafruit_CircuitPython_framebuf/blob/master/examples/font5x8.bin?raw=true
 
@@ -36,120 +50,139 @@ LATITUDE = 2
 LATITUDE_NS = 3
 LONGITUDE = 4
 LONGITUDE_EW = 5
-# Button A
-btnA = DigitalInOut(board.D5)
-btnA.direction = Direction.INPUT
-btnA.pull = Pull.UP
 
-# Button B
-btnB = DigitalInOut(board.D6)
-btnB.direction = Direction.INPUT
-btnB.pull = Pull.UP
+class RecieveRFM69Data(object):
+    def __init__(self, disaply_lock_data=None, bluetooth_lock_data=None):
+        """
+        The init function is empty for now.
+        """
+        self.display_lock_data = disaply_lock_data
+        self.bluetooth_lock_data = bluetooth_lock_data
 
-# Button C
-btnC = DigitalInOut(board.D12)
-btnC.direction = Direction.INPUT
-btnC.pull = Pull.UP
+    def run(self):
+        """
+        This runs the radio
 
-# board interrupt ping gpio 22
-gpio22 = DigitalInOut(board.D22)
-gpio22.direction = Direction.INPUT
-gpio22.pull = Pull.UP
+        It does not exit tand it does not return
+        """
 
-# Create the I2C interface.
-i2c = busio.I2C(board.SCL, board.SDA)
-# this is the degree sign for dosplaying to the display and is specific to the font5x8
-degree_sign_bonnet =  u"\u00f8"
-degree_sign_utf8 = u"\u00b0"
-minutes_sign = u"\u0027"
-if not os.path.exists('font5x8.bin'):
-    print('the file font5x8.bin is not present in the current directory.')
-    print('use the command wget -O font5x8.bin \
-    https://github.com/adafruit/Adafruit_CircuitPython_framebuf/blob/master/examples/font5x8.bin?raw=true to download')
-    exit(-1)
-# 128x32 OLED Display
-display = adafruit_ssd1306.SSD1306_I2C(128, 32, i2c, addr=0x3c)
 
-# Clear the display.
-display.fill(0)
-display.show()
-width = display.width
-height = display.height
+        btnA = DigitalInOut(board.D5)
+        btnA.direction = Direction.INPUT
+        btnA.pull = Pull.UP
 
-# Configure Packet Radio
-CS = DigitalInOut(board.CE1)
-RESET = DigitalInOut(board.D25)
-spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
-rfm69 = adafruit_rfm69.RFM69(spi, CS, RESET, 433.0, sync_word=b'\x2D\xD4')
-prev_packet = None
+        # Button B
+        btnB = DigitalInOut(board.D6)
+        btnB.direction = Direction.INPUT
+        btnB.pull = Pull.UP
 
-display.fill(0)
-display.text('Remote Location', 0, 0, 1)
-display.show()
+        # Button C
+        btnC = DigitalInOut(board.D12)
+        btnC.direction = Direction.INPUT
+        btnC.pull = Pull.UP
 
-while True:
-    packet = None
-    # draw a box to clear the image
-    # check for packet rx
-    packet = rfm69.receive(with_header=True, rx_filter=1)
-    if packet is not None:
+        # board interrupt ping gpio 22
+        gpio22 = DigitalInOut(board.D22)
+        gpio22.direction = Direction.INPUT
+        gpio22.pull = Pull.UP
+
+        # Create the I2C interface.
+        i2c = busio.I2C(board.SCL, board.SDA)
+        # this is the degree sign for dosplaying to the display and is specific to the font5x8
+        degree_sign_bonnet = u"\u00f8"
+        degree_sign_utf8 = u"\u00b0"
+        minutes_sign = u"\u0027"
+        if not os.path.exists('font5x8.bin'):
+            print('the file font5x8.bin is not present in the current directory.')
+            print('use the command wget -O font5x8.bin \
+            https://github.com/adafruit/Adafruit_CircuitPython_framebuf/blob/master/examples/font5x8.bin?raw=true to download')
+            exit(-1)
+        # 128x32 OLED Display
+        display = adafruit_ssd1306.SSD1306_I2C(128, 32, i2c, addr=0x3c)
+
+        # Clear the display.
+        display.fill(0)
+        display.show()
+        width = display.width
+        height = display.height
+
+        # Configure Packet Radio
+        CS = DigitalInOut(board.CE1)
+        RESET = DigitalInOut(board.D25)
+        spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
+        rfm69 = adafruit_rfm69.RFM69(spi, CS, RESET, 433.0, sync_word=b'\x2D\xD4')
+        prev_packet = None
+
         display.fill(0)
         display.text('Remote Location', 0, 0, 1)
         display.show()
-        # Display the packet text
-        header = packet[0:4]
-        processed_packet = packet[4:]
-        packet_text = str(processed_packet, "utf-8")
-        packet_list = packet_text.split(",")
-        callsign = packet_list[CALLSIGN]
-        if packet_list[VALID] != 'A':
-            # the packet does not have a valid gps location
-            display.text('not valid {}'.format(callsign), 0, 8, 1)
-            continue
 
-        # latitude has the form of Latitude (DDmm.mm)
-        lat_degrees = packet_list[LATITUDE][:2]
-        lat_minutes_seconds = packet_list[LATITUDE][2:]
-        north_south = '' if packet_list[LATITUDE_NS] == 'N' else '-'
-        latitude = 'lat = ' + north_south + lat_degrees + degree_sign_bonnet + lat_minutes_seconds + minutes_sign
-        latitude_to_bluetooth = north_south + lat_degrees + degree_sign_utf8 + lat_minutes_seconds + minutes_sign
-        # longitude has teh form Longitude (DDDmm.mm)
-        long_degrees = packet_list[LONGITUDE][:3]
-        long_minutes_seconds = packet_list[LONGITUDE][3:]
+        while True:
+            packet = None
+            # draw a box to clear the image
+            # check for packet rx
+            packet = rfm69.receive(with_header=True, rx_filter=1)
+            if packet is not None:
+                display.fill(0)
+                display.text('Remote Location', 0, 0, 1)
+                display.show()
+                # Display the packet text
+                header = packet[0:4]
+                processed_packet = packet[4:]
+                packet_text = str(processed_packet, "utf-8")
+                packet_list = packet_text.split(",")
+                callsign = packet_list[CALLSIGN]
+                if packet_list[VALID] != 'A':
+                    # the packet does not have a valid gps location
+                    display.text('not valid {}'.format(callsign), 0, 8, 1)
+                    continue
 
-        east_west = '' if packet_list[LONGITUDE_EW] == 'E' else '-'
-        longitude = 'log = ' + east_west + long_degrees + degree_sign_bonnet + long_minutes_seconds + minutes_sign
-        longitude_to_bluetooth = east_west + long_degrees + degree_sign_utf8 + long_minutes_seconds + minutes_sign
-        display.text(latitude, 0, 8, 1)
-        display.text(longitude, 0, 16, 1)
-        display.text('valid, {} {:01x}'.format(callsign, header[2] & 0xf),0, 24, 1)
-        ack_data = bytes('a','utf-8')
-        # create of tuple of to, from, id, status,
-        send_tuple=(header[1], header[0], header[2], 0x80)
+                # latitude has the form of Latitude (DDmm.mm)
+                lat_degrees = packet_list[LATITUDE][:2]
+                lat_minutes_seconds = packet_list[LATITUDE][2:]
+                north_south = '' if packet_list[LATITUDE_NS] == 'N' else '-'
+                latitude = 'lat = ' + north_south + lat_degrees + degree_sign_bonnet + lat_minutes_seconds + minutes_sign
+                latitude_to_bluetooth = north_south + lat_degrees + degree_sign_utf8 + lat_minutes_seconds + minutes_sign
+                # longitude has teh form Longitude (DDDmm.mm)
+                long_degrees = packet_list[LONGITUDE][:3]
+                long_minutes_seconds = packet_list[LONGITUDE][3:]
 
-        rfm69.send(ack_data, tx_header=send_tuple)
-        print ('{} {}'.format(latitude_to_bluetooth, longitude_to_bluetooth))
-        time.sleep(1)
+                east_west = '' if packet_list[LONGITUDE_EW] == 'E' else '-'
+                longitude = 'log = ' + east_west + long_degrees + degree_sign_bonnet + long_minutes_seconds + minutes_sign
+                longitude_to_bluetooth = east_west + long_degrees + degree_sign_utf8 + long_minutes_seconds + minutes_sign
+                display.text(latitude, 0, 8, 1)
+                display.text(longitude, 0, 16, 1)
+                display.text('valid, {} {:01x}'.format(callsign, header[2] & 0xf), 0, 24, 1)
+                ack_data = bytes('a', 'utf-8')
+                # create of tuple of to, from, id, status,
+                send_tuple = (header[1], header[0], header[2], 0x80)
 
-    if not btnA.value:
-        # Send Button A
-        display.fill(0)
-        button_a_data = bytes("Button A!\r\n","utf-8")
-        rfm69.send(button_a_data)
-        display.text('Sent Button A!', 25, 15, 1)
-    elif not btnB.value:
-        # Send Button B
-        display.fill(0)
-        button_b_data = bytes("Button B!\r\n","utf-8")
-        rfm69.send(button_b_data)
-        display.text('Sent Button B!', 25, 15, 1)
-    elif not btnC.value:
-        # Send Button C
-        display.fill(0)
-        button_c_data = bytes("Button C!\r\n","utf-8")
-        rfm69.send(button_c_data)
-        display.text('Sent Button C!', 25, 15, 1)
+                rfm69.send(ack_data, tx_header=send_tuple)
+                print('{} {}'.format(latitude_to_bluetooth, longitude_to_bluetooth))
+                time.sleep(1)
 
-    display.show()
-    time.sleep(1)
+            if not btnA.value:
+                # Send Button A
+                display.fill(0)
+                button_a_data = bytes("Button A!\r\n", "utf-8")
+                rfm69.send(button_a_data)
+                display.text('Sent Button A!', 25, 15, 1)
+            elif not btnB.value:
+                # Send Button B
+                display.fill(0)
+                button_b_data = bytes("Button B!\r\n", "utf-8")
+                rfm69.send(button_b_data)
+                display.text('Sent Button B!', 25, 15, 1)
+            elif not btnC.value:
+                # Send Button C
+                display.fill(0)
+                button_c_data = bytes("Button C!\r\n", "utf-8")
+                rfm69.send(button_c_data)
+                display.text('Sent Button C!', 25, 15, 1)
 
+            display.show()
+            time.sleep(1)
+
+if __name__ == "__main__":
+    run_radio = RecieveRFM69Data()
+    run_radio.run()
