@@ -1,3 +1,4 @@
 font5x8*.bin
 .idea/**
-venv
+venv/**
+__pycache__/**
