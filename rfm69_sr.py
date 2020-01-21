@@ -45,13 +45,7 @@ from digitalio import DigitalInOut
 from digitalio import Direction
 from digitalio import Pull
 import gps_lock_and_location
-
-CALLSIGN = 0
-VALID = 1
-LATITUDE = 2
-LATITUDE_NS = 3
-LONGITUDE = 4
-LONGITUDE_EW = 5
+import radio_constants
 
 
 class DisplayLocation(threading.Thread):
@@ -90,9 +84,8 @@ class DisplayLocation(threading.Thread):
         i2c = busio.I2C(board.SCL, board.SDA)
         # this is the degree sign for displaying to the display and is specific to the font5x8
         degree_sign_bonnet = u"\u00f8"
-        # degree_sign_utf8 = u"\u00b0"
         minutes_sign = u"\u0027"
-
+        # now display the data
         display = adafruit_ssd1306.SSD1306_I2C(128, 32, i2c, addr=0x3c)
         counter = 0
         while True:
@@ -106,23 +99,23 @@ class DisplayLocation(threading.Thread):
                 display.show()
                 continue
             else:
-                callsign = packet_list[CALLSIGN]
-                if packet_list[VALID] != 'A':
+                callsign = packet_list[radio_constants.CALLSIGN]
+                if packet_list[radio_constants.VALID] != 'A':
                     # the packet does not have a valid gps location
                     display.text('not valid {}'.format(callsign), 0, 8, 1)
                     display.show()
                     continue
             # latitude has the form of Latitude (DDmm.mm)
-            lat_degrees = packet_list[LATITUDE][:2]
-            lat_minutes_seconds = packet_list[LATITUDE][2:]
-            north_south = '' if packet_list[LATITUDE_NS] == 'N' else '-'
+            lat_degrees = packet_list[radio_constants.LATITUDE][:2]
+            lat_minutes_seconds = packet_list[radio_constants.LATITUDE][2:]
+            north_south = '' if packet_list[radio_constants.LATITUDE_NS] == 'N' else '-'
             latitude = 'lat = ' + north_south + lat_degrees + degree_sign_bonnet + lat_minutes_seconds + minutes_sign
             # latitude_to_bluetooth = north_south + lat_degrees + degree_sign_utf8 + lat_minutes_seconds + minutes_sign
-            # longitude has teh form Longitude (DDDmm.mm)
-            long_degrees = packet_list[LONGITUDE][:3]
-            long_minutes_seconds = packet_list[LONGITUDE][3:]
+            # longitude has the form Longitude (DDDmm.mm)
+            long_degrees = packet_list[radio_constants.LONGITUDE][:3]
+            long_minutes_seconds = packet_list[radio_constants.LONGITUDE][3:]
 
-            east_west = '' if packet_list[LONGITUDE_EW] == 'E' else '-'
+            east_west = '' if packet_list[radio_constants.LONGITUDE_EW] == 'E' else '-'
             longitude = 'log = ' + east_west + long_degrees + degree_sign_bonnet + long_minutes_seconds + minutes_sign
             # longitude_to_bluetooth = east_west + long_degrees + degree_sign_utf8 + long_minutes_seconds + minutes_sign
             display.text(latitude, 0, 8, 1)
@@ -190,7 +183,7 @@ class ReceiveRFM69Data(threading.Thread):
                 packet_text = str(processed_packet, "utf-8")
                 packet_list = packet_text.split(',')
                 self.lock_location_class.gps_location = packet_list
-                if packet_list[VALID] != 'A':
+                if packet_list[radio_constants.VALID] != 'A':
                     # the packet does not have a valid gps location
                     self.lock_location_class.gps_location = 'not valid'
                     continue
