@@ -222,8 +222,8 @@ if __name__ == "__main__":
     # create the gps_loc_and location class
     gps_lock_and_location = gps_lock_and_location.GpsLockLocation()
     # create and run the threads
-    run_radio = ReceiveRFM69Data('rfm_radio', gps_lock_and_location,event, )
-    run_display = DisplayLocation('display data', gps_lock_and_location,event )
+    run_radio = ReceiveRFM69Data('rfm_radio', gps_lock_and_location, event, )
+    run_display = DisplayLocation('display data', gps_lock_and_location, event, )
     run_radio.start()
     run_display.start()
 
