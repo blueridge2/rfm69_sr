@@ -64,7 +64,8 @@ class DisplayLocation(threading.Thread):
         this is the init class for the thread
 
         :param name: The name of the thread
-        :param args: The args, it must be a tupple consistin go the lock variable, the shared data, shold be a string
+        :param args: The args, it must be a tuple consisting go the lock variable, the shared data, must be a list
+                     the second arg is the event so cause a shutdown if button a is pushed
         :param kwargs: Noe used
         """
         super(DisplayLocation, self).__init__(name=name, args=args, kwargs=kwargs)
@@ -77,6 +78,7 @@ class DisplayLocation(threading.Thread):
         self.args = args
         self.lock_location_class = self.args[0]
         self.name = name
+        self.event = self.args[1]
 
     def run(self):
         """
@@ -128,6 +130,9 @@ class DisplayLocation(threading.Thread):
             display.text('valid, {} {:01x}'.format(callsign, counter & 0xf), 0, 24, 1)
             display.show()
             counter = counter + 1 if counter < 16 else 0
+            # test to see if the it is time to exit
+            if self.event.is_set():
+                return
             time.sleep(1)
 
 
@@ -148,8 +153,8 @@ class ReceiveRFM69Data(threading.Thread):
         self.kwargs = kwargs
         if args is None:
             raise ValueError('args cannot be None')
-        print('args = {}'.format(args))
         self.lock_location_class = self.args[0]
+        self.event = self.args[1]
 
     def run(self):
         """
@@ -160,16 +165,6 @@ class ReceiveRFM69Data(threading.Thread):
         btnA = DigitalInOut(board.D5)
         btnA.direction = Direction.INPUT
         btnA.pull = Pull.UP
-
-        # Button B
-        btnB = DigitalInOut(board.D6)
-        btnB.direction = Direction.INPUT
-        btnB.pull = Pull.UP
-
-        # Button C
-        btnC = DigitalInOut(board.D12)
-        btnC.direction = Direction.INPUT
-        btnC.pull = Pull.UP
 
         # board interrupt ping gpio 22
         gpio22 = DigitalInOut(board.D22)
@@ -208,15 +203,9 @@ class ReceiveRFM69Data(threading.Thread):
             if not btnA.value:
                 # Send Button A
                 # button_a_data = bytes("Button A!\r\n", "utf-8")
-                pass
-            elif not btnB.value:
-                # Send Button B
-                # button_b_data = bytes("Button B!\r\n", "utf-8")
-                pass
-            elif not btnC.value:
-                # Send Button C
-                # button_c_data = bytes("Button C!\r\n", "utf-8")
-                pass
+                self.event.set()
+                time.sleep(1)
+                return
 
             time.sleep(1)
 
@@ -227,9 +216,14 @@ if __name__ == "__main__":
         print('use the command wget -O font5x8.bin \
                 https://github.com/adafruit/Adafruit_CircuitPython_framebuf/blob/master/examples/font5x8.bin?raw=true to download')
         exit(-1)
+    # set up an event for exit and make sure it is clear
+    event = threading.Event()
+    event.clear()
+    # create the gps_loc_and location class
     gps_lock_and_location = gps_lock_and_location.GpsLockLocation()
-    run_radio = ReceiveRFM69Data('rfm_radio', gps_lock_and_location, )
-    run_display = DisplayLocation('display data', gps_lock_and_location, )
+    # create and run the threads
+    run_radio = ReceiveRFM69Data('rfm_radio', gps_lock_and_location,event, )
+    run_display = DisplayLocation('display data', gps_lock_and_location,event )
     run_radio.start()
     run_display.start()
 
