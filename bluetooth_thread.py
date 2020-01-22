@@ -55,15 +55,11 @@ class BluetoothTransmitThread(threading.Thread):
         :param mac_address: the mac address of the client to which we will connect
         :return: at tuple with the client, and address if successful, False, false if it fails
         """
-        print('in connect')
-
         port = 3  # 3 is an arbitrary choice. However, it must match the port used by the client.
         backlog = 1
         size = 1024
-        print('mac address = {}'.format(mac_address))
         #
         s = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
-        print('s = {}'.format(s))
         try:
             s.bind((mac_address, port))
         except Exception as error:
@@ -72,16 +68,11 @@ class BluetoothTransmitThread(threading.Thread):
             return False, False, False
         print('bound')
         s.listen(backlog)
-        print('listening')
         s.settimeout(timeout)
-        print('no time out')
         try:
             client, address = s.accept()
         except Exception as error:
-            print("accept error=\'{}\'".format(error))
             return False, False, False
-        print('accepted')
-
         return s, client, address
 
     def send_data(self, client, address, data):
@@ -93,20 +84,18 @@ class BluetoothTransmitThread(threading.Thread):
         :param data: the data to send,should be a string
         :return True if the send is successful or False if not
         """
-
         try:
-
             byte_data_array = bytearray(('{}\n'.format(data).encode('utf-8')))
             length = client.send(byte_data_array)
-            print('length send ={}'.format(length))
         except:
             return False
         return True
 
-    def process_packet(self, packet_list):
+    def process_packet(self, packet_list, counter):
         """
         process the packet
         :param packet: a list that is either a packet or none
+        :param counter a counter ot show movement on phone
         :return: a string with the packet in it
         """
         degree_sign_utf8 = u"\u00b0"
@@ -128,7 +117,7 @@ class BluetoothTransmitThread(threading.Thread):
 
             east_west = '' if packet_list[radio_constants.LONGITUDE_EW] == 'E' else '-'
             longitude = 'log = ' + east_west + long_degrees + degree_sign_utf8 + long_minutes_seconds + minutes_sign
-            lat_long = longitude + latitude
+            lat_long = longitude + latitude + ' ' + '{}'.format(counter)
         return lat_long
 
     def run(self):
@@ -148,20 +137,17 @@ class BluetoothTransmitThread(threading.Thread):
                 if not client or not address:
                     print('did not connect, so wait {} and continue'.format(1))
                     time.sleep(1)
-                print('we are connected')
                 connected = True
             if connected:
                 # ok we are connected.
                 packet_list = self.lock_location_class.data
-                lat_long = self.process_packet(packet_list)
-                print('send data')
+                lat_long = self.process_packet(packet_list, counter)
+                counter = counter + 1 if counter < 16 else 0
                 send_status = self.send_data(client, address, lat_long)
                 if not send_status:
                     client.close()
                     local_socket.close()
                     connected = False
-                    print('not connected')
-                counter = counter + 1 if counter < 16 else 0
                 # test to see if the it is time to exit
                 if self.event.is_set():
                     return
