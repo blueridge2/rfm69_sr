@@ -44,7 +44,8 @@ import board
 from digitalio import DigitalInOut
 from digitalio import Direction
 from digitalio import Pull
-import gps_lock_and_location
+import lock_and_data
+import bluetooth_thread
 import radio_constants
 
 
@@ -209,16 +210,36 @@ if __name__ == "__main__":
         print('use the command wget -O font5x8.bin \
                 https://github.com/adafruit/Adafruit_CircuitPython_framebuf/blob/master/examples/font5x8.bin?raw=true to download')
         exit(-1)
+    # next read the mac address from the mac address file
+    try:
+        mac_address_file = open("mac_address", "r")
+    except Exception as error:
+        print('file not found our accessible, error=error={}'.format(error))
+        exit(-1)
+
+    try:
+        mac_address = mac_address_file.read()
+    except Exception as error:
+        print('read of mac_address failed, error={}'.format(error))
+
+    dictionary_args = {'mac_address': mac_address, 'timeout': 10}
     # set up an event for exit and make sure it is clear
     event = threading.Event()
     event.clear()
     # create the gps_loc_and location class
-    gps_lock_and_location = gps_lock_and_location.GpsLockLocation()
+    gps_lock_and_location = lock_and_data.LockAndData()
+    bluetooth_lock_and_data = lock_and_data.LockAndData()
     # create and run the threads
     run_radio = ReceiveRFM69Data('rfm_radio', gps_lock_and_location, event, )
     run_display = DisplayLocation('display data', gps_lock_and_location, event, )
-    run_radio.start()
-    run_display.start()
+    bluetooth_args = (gps_lock_and_location, event, bluetooth_lock_and_data, dictionary_args)
+    connect_bluetooth = bluetooth_thread.BluetoothSocketThread('Bluetooth connection', *bluetooth_args, **dictionary_args)
 
-    run_radio.join()
-    run_display.join()
+
+    # run_radio.start()
+    # run_display.start()
+    connect_bluetooth.start()
+    connect_bluetooth.join()
+
+    #run_radio.join()
+    #run_display.join()

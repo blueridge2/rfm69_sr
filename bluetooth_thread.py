@@ -17,27 +17,6 @@ import time
 import radio_constants
 import socket
 
-hostMACAddress = 'DC:A6:32:06:56:1D' # The MAC address of a Bluetooth adapter on the server. The server might have multiple Bluetooth adapters.
-port = 3 # 3 is an arbitrary choice. However, it must match the port used by the client.
-backlog = 1
-size = 1024
-local_socket = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
-local_socket.bind((hostMACAddress,port))
-local_socket.listen(backlog)
-client = None
-try:
-    client, address = local_socket.accept()
-    while 1:
-        data = client.recv(size)
-        print('datatype = {} data={}'.format(type(data), data))
-        mystr_list = bytearray('abcdef{}\n'.format(data.decode("utf-8")), 'utf-8')
-        length = client.send(mystr_list)
-        print('length send ={}'.format(length))
-except:
-    print("Closing socket")
-    client.close()
-    local_socket.close()
-
 class BluetoothSocketThread(threading.Thread):
     """
     A thread to endless attempt to open a bluetooth socket to a paired phone on a mac address
@@ -47,7 +26,7 @@ class BluetoothSocketThread(threading.Thread):
         this is the init class for the thread
 
         :param name: The name of the thread
-        :param args: The args, it must be a tuple consisting go the lock variable, the shared data, must be a list
+        :param args: The args, lock_data class, for gps data, event (four shutdown), lock_data_class, (for connection data)
                      the second arg is the event so cause a shutdown if button a is pushed
         :param kwargs: a dictionary that must contain the mac address and the timeout
                         example {'mac_address': xx:xx:xx:xx:xx, 'timeout':10}  the timeout is optional but the mac address is not
@@ -61,19 +40,23 @@ class BluetoothSocketThread(threading.Thread):
             raise ValueError()
         self.args = args
         self.kwargs = kwargs
-        self.socket_data_lock = self.args[0]
+        print('args = {}'.format(args))
+        print('kwargs = {}'.format(kwargs))
+        self.socket_data_lock = self.args[2]
         self.name = name
         self.event = self.args[1]
         self.mac_address = self.kwargs['mac_address']
         self.timeout = self.kwargs.get('timeout', 10)
+        print('mac_address={}, timeout={}'.format(self.mac_address, self.timeout))
 
     def connect(self, mac_address, timeout=10):
         """
         connect to blue tooth client
 
         :param mac_address: the mac address of the client to which we will connect
-        :return: at tuple with the client, and address if successfule, False, false if it fails
+        :return: at tuple with the client, and address if successful, False, false if it fails
         """
+        print('in connect')
         hostMACAddress = mac_address  # The MAC address of a Blue tooth adapter on the server. The server might have multiple Bluetooth adapters.
         port = 3  # 3 is an arbitrary choice. However, it must match the port used by the client.
         backlog = 1
@@ -97,13 +80,17 @@ class BluetoothSocketThread(threading.Thread):
         :return:
         """
         while True:
+            print('attempting connection')
             client, address = self.connect(self.mac_address, self.timeout)
+            print('client = {}, address = {}'.format(client, address))
             if not client or not address:
-                print('connect failed, try again in 1 second')
+                print('connect failed, try again in {} seconds'.format(self.timeout))
+            self.socket_data_lock.data = client, address
+
             if self.event.is_set():
                 print('event Terminate thread')
                 return
-            time.sleep(1)
+            time.sleep(self.timeout)
 
 class BluetoothTransmitThread(threading.Thread):
     """
@@ -132,31 +119,7 @@ class BluetoothTransmitThread(threading.Thread):
         self.lock_location_class = self.args[0]
         self.name = name
         self.event = self.args[1]
-        self.mac_address = self.kwargs['mac_address']
-        self.timeout = self.kwargs.get('timeout', 10)
 
-    def connect(self, mac_address, timeout):
-        """
-        connect to blue tooth client
-
-        :param mac_address: the mac address of the client to which we will connect
-        :return: at tuple with the client, and address if successfule, False, false if it fails
-        """
-        hostMACAddress = mac_address  # The MAC address of a Blue tooth adapter on the server. The server might have multiple Bluetooth adapters.
-        port = 3  # 3 is an arbitrary choice. However, it must match the port used by the client.
-        backlog = 1
-        size = 1024
-        local_socket = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
-        local_socket.bind((hostMACAddress, port))
-        local_socket.settimeout(10)
-        local_socket.listen(backlog)
-        try:
-            client, address = socket.accept()
-        except Exception as error:
-            print("accept error=\'{}\'".format(error))
-            socket.close()
-            return False, False
-        return client, address
 
     def run(self):
         """

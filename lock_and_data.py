@@ -15,7 +15,7 @@
 import threading
 
 
-class GpsLockLocation():
+class LockAndData():
     """
     A class to contain common data for the lock class and location
     """
@@ -24,27 +24,27 @@ class GpsLockLocation():
         The init class for the lock and location
         """
         self._lock = threading.Lock()
-        self.gps_location = None
+        self.data = None
 
     @property
-    def gps_location(self):
+    def data(self):
         """
-        A function to lock the location, read it unlock the data and return with the location
+        A function to lock the data, read it unlock the data and return with the location
         :return a string with the gps location
         """
         self._lock.acquire()
-        location = self.__gps_location
+        location = self.__data
         self._lock.release()
         return location
 
-    @gps_location.setter
-    def gps_location(self, location):
+    @data.setter
+    def data(self, data):
         """
         A function to set the gps location
 
-        :param location: the gps location
+        :param data: the to saved in the class
         :return: None
         """
         self._lock.acquire()
-        self.__gps_location = location
+        self.__data = data
         self._lock.release()
