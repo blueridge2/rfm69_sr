@@ -2,3 +2,5 @@ font5x8*.bin
 .idea/**
 venv/**
 __pycache__/**
+mac_address
+call_sign

@@ -19,12 +19,12 @@ class LockAndData():
     """
     A class to contain common data for the lock class and location
     """
-    def __init__(self):
+    def __init__(self, data=None):
         """
         The init class for the lock and location
         """
         self._lock = threading.Lock()
-        self.data = None
+        self.data = data
 
     @property
     def data(self):

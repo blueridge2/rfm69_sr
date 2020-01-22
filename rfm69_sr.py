@@ -89,15 +89,18 @@ class DisplayLocation(threading.Thread):
         # now display the data
         display = adafruit_ssd1306.SSD1306_I2C(128, 32, i2c, addr=0x3c)
         counter = 0
+        no_packet = True
         while True:
             display.fill(0)
             display.text('Remote Location', 0, 0, 1)
             display.show()
 
-            packet_list = self.lock_location_class.gps_location
+            packet_list = self.lock_location_class.data
+
             if packet_list is None:
                 display.text('not valid {}'.format('no packet'), 0, 8, 1)
                 display.show()
+                time.sleep(1)
                 continue
             else:
                 callsign = packet_list[radio_constants.CALLSIGN]
@@ -105,7 +108,9 @@ class DisplayLocation(threading.Thread):
                     # the packet does not have a valid gps location
                     display.text('not valid {}'.format(callsign), 0, 8, 1)
                     display.show()
+                    no_packet = True
                     continue
+
             # latitude has the form of Latitude (DDmm.mm)
             lat_degrees = packet_list[radio_constants.LATITUDE][:2]
             lat_minutes_seconds = packet_list[radio_constants.LATITUDE][2:]
@@ -171,36 +176,37 @@ class ReceiveRFM69Data(threading.Thread):
         spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
         rfm69 = adafruit_rfm69.RFM69(spi, CS, RESET, 433.0, sync_word=b'\x2D\xD4')
         # prev_packet = None
-
+        no_packet = True
         while True:
-            packet = None
-            # draw a box to clear the image
-            # check for packet rx
-            packet = rfm69.receive(with_header=True, rx_filter=1)
-            if packet is not None:
-                # Display the packet text
-                header = packet[0:4]
-                processed_packet = packet[4:]
-                packet_text = str(processed_packet, "utf-8")
-                packet_list = packet_text.split(',')
-                self.lock_location_class.gps_location = packet_list
-                if packet_list[radio_constants.VALID] != 'A':
-                    # the packet does not have a valid gps location
-                    self.lock_location_class.gps_location = 'not valid'
-                    continue
-                # longitude has teh form Longitude (DDDmm.mm)
-                ack_data = bytes('a', 'utf-8')
-                # create of tuple of to, from, id, status,
-                ack_tuple = (header[1], header[0], header[2], 0x80)
-                rfm69.send(ack_data, tx_header=ack_tuple)
-
             if not btnA.value:
                 # Send Button A
                 # button_a_data = bytes("Button A!\r\n", "utf-8")
                 self.event.set()
                 time.sleep(1)
                 return
+            # check for packet rx
+            packet = rfm69.receive(with_header=True, rx_filter=1)
+            if packet is not None:
+                print('got a packet')
+                # Display the packet text
+                header = packet[0:4]
+                processed_packet = packet[4:]
+                packet_text = str(processed_packet, "utf-8")
+                packet_list = packet_text.split(',')
+                self.lock_location_class.data = packet_list
+                if packet_list[radio_constants.VALID] != 'A':
+                    print('packet not valid')
+                    # the packet does not have a valid gps location
+                    self.lock_location_class.data = 'not valid'
 
+                    continue
+                else:
+                    self.lock_location_class.data= packet_list
+                # longitude has the form Longitude (DDDmm.mm)
+                ack_data = bytes('a', 'utf-8')
+                # create of tuple of to, from, id, status,
+                ack_tuple = (header[1], header[0], header[2], 0x80)
+                rfm69.send(ack_data, tx_header=ack_tuple)
             time.sleep(1)
 
 
@@ -228,18 +234,17 @@ if __name__ == "__main__":
     event.clear()
     # create the gps_loc_and location class
     gps_lock_and_location = lock_and_data.LockAndData()
-    bluetooth_lock_and_data = lock_and_data.LockAndData()
     # create and run the threads
     run_radio = ReceiveRFM69Data('rfm_radio', gps_lock_and_location, event, )
     run_display = DisplayLocation('display data', gps_lock_and_location, event, )
-    bluetooth_args = (gps_lock_and_location, event, bluetooth_lock_and_data, dictionary_args)
-    connect_bluetooth = bluetooth_thread.BluetoothSocketThread('Bluetooth connection', *bluetooth_args, **dictionary_args)
+    bluetooth_args = (gps_lock_and_location, event,  dictionary_args)
+    connect_bluetooth = bluetooth_thread.BluetoothTransmitThread('Bluetooth connection', *bluetooth_args, **dictionary_args)
 
 
-    # run_radio.start()
-    # run_display.start()
+    run_radio.start()
+    run_display.start()
     connect_bluetooth.start()
-    connect_bluetooth.join()
 
-    #run_radio.join()
-    #run_display.join()
+    connect_bluetooth.join()
+    run_radio.join()
+    run_display.join()
