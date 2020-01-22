@@ -187,8 +187,7 @@ class ReceiveRFM69Data(threading.Thread):
             # check for packet rx
             packet = rfm69.receive(with_header=True, rx_filter=1)
             if packet is not None:
-                print('got a packet')
-                # Display the packet text
+                # send the data to data class
                 header = packet[0:4]
                 processed_packet = packet[4:]
                 packet_text = str(processed_packet, "utf-8")
@@ -198,10 +197,8 @@ class ReceiveRFM69Data(threading.Thread):
                     print('packet not valid')
                     # the packet does not have a valid gps location
                     self.lock_location_class.data = 'not valid'
-
+                    time.sleep(1)
                     continue
-                else:
-                    self.lock_location_class.data= packet_list
                 # longitude has the form Longitude (DDDmm.mm)
                 ack_data = bytes('a', 'utf-8')
                 # create of tuple of to, from, id, status,
@@ -228,7 +225,7 @@ if __name__ == "__main__":
     except Exception as error:
         print('read of mac_address failed, error={}'.format(error))
 
-    dictionary_args = {'mac_address': mac_address, 'timeout': 10}
+    dictionary_args = {'mac_address': mac_address, 'timeout': 30}
     # set up an event for exit and make sure it is clear
     event = threading.Event()
     event.clear()

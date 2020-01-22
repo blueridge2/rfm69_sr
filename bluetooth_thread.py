@@ -56,20 +56,33 @@ class BluetoothTransmitThread(threading.Thread):
         :return: at tuple with the client, and address if successful, False, false if it fails
         """
         print('in connect')
-        hostMACAddress = mac_address  # The MAC address of a Blue tooth adapter on the server. The server might have multiple Bluetooth adapters.
+
         port = 3  # 3 is an arbitrary choice. However, it must match the port used by the client.
         backlog = 1
         size = 1024
-        local_socket = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
-        local_socket.bind((hostMACAddress, port))
-        local_socket.settimeout(timeout)
-        local_socket.listen(backlog)
+        print('mac address = {}'.format(mac_address))
+        #
+        s = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
+        print('s = {}'.format(s))
         try:
-            client, address = local_socket.accept()
+            s.bind((mac_address, port))
+        except Exception as error:
+            print('connect error={}'.format(error))
+            s.close()
+            return False, False, False
+        print('bound')
+        s.listen(backlog)
+        print('listening')
+        s.settimeout(timeout)
+        print('no time out')
+        try:
+            client, address = s.accept()
         except Exception as error:
             print("accept error=\'{}\'".format(error))
             return False, False, False
-        return local_socket, client, address
+        print('accepted')
+
+        return s, client, address
 
     def send_data(self, client, address, data):
         """
@@ -129,14 +142,19 @@ class BluetoothTransmitThread(threading.Thread):
         local_socket = None
         while True:
             if not connected:
+                print('not connected')
                 local_socket, client, address = self.connect(mac_address=self.mac_address, timeout=self.timeout)
+
                 if not client or not address:
-                    print('did not connect, so wait {} and continue'.format(self.timeout))
-                    time.sleep(self.timeout)
-            else:
+                    print('did not connect, so wait {} and continue'.format(1))
+                    time.sleep(1)
+                print('we are connected')
+                connected = True
+            if connected:
                 # ok we are connected.
-                packet_list = self.lock_location_class.gps_location
+                packet_list = self.lock_location_class.data
                 lat_long = self.process_packet(packet_list)
+                print('send data')
                 send_status = self.send_data(client, address, lat_long)
                 if not send_status:
                     client.close()
