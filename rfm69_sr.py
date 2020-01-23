@@ -54,7 +54,9 @@ class DisplayLocation(threading.Thread):
     this is a thread class for the bluetooth radio
 
     """
-    def __init__(self, name, *args, **kwargs):
+    __slots__ = ['name', 'args', 'lock_location_class', 'event']
+
+    def __init__(self, name, *args):
         """
         this is the init class for the thread
 
@@ -63,7 +65,7 @@ class DisplayLocation(threading.Thread):
                      the second arg is the event so cause a shutdown if button a is pushed
         :param kwargs: Noe used
         """
-        super(DisplayLocation, self).__init__(name=name, args=args, kwargs=kwargs)
+        super(DisplayLocation, self).__init__(name=name, args=args)
 
         if args is None:
             raise ValueError('Args cannot be None')
@@ -89,7 +91,7 @@ class DisplayLocation(threading.Thread):
         # now display the data
         display = adafruit_ssd1306.SSD1306_I2C(128, 32, i2c, addr=0x3c)
         counter = 0
-        no_packet = True
+        # run around in loop getting data
         while True:
             display.fill(0)
             display.text('Remote Location', 0, 0, 1)
@@ -108,7 +110,6 @@ class DisplayLocation(threading.Thread):
                     # the packet does not have a valid gps location
                     display.text('not valid {}'.format(callsign), 0, 8, 1)
                     display.show()
-                    no_packet = True
                     continue
 
             # latitude has the form of Latitude (DDmm.mm)
@@ -136,7 +137,11 @@ class DisplayLocation(threading.Thread):
 
 
 class ReceiveRFM69Data(threading.Thread):
-    def __init__(self, name, *args, **kwargs):
+
+    # prevent adding external weak adds
+    __slots__ = ['name', 'args', 'lock_location_class', 'event']
+
+    def __init__(self, name, *args):
         """
         The init function is empty for now.
 
@@ -146,10 +151,9 @@ class ReceiveRFM69Data(threading.Thread):
         :param kwargs: not used at this time
 
         """
-        super(ReceiveRFM69Data, self).__init__(name=name, args=args, kwargs=kwargs)
+        super(ReceiveRFM69Data, self).__init__(name=name, args=args)
         self.name = name
         self.args = args
-        self.kwargs = kwargs
         if args is None:
             raise ValueError('args cannot be None')
         self.lock_location_class = self.args[0]
@@ -175,8 +179,6 @@ class ReceiveRFM69Data(threading.Thread):
         RESET = DigitalInOut(board.D25)
         spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
         rfm69 = adafruit_rfm69.RFM69(spi, CS, RESET, 433.0, sync_word=b'\x2D\xD4')
-        # prev_packet = None
-        no_packet = True
         while True:
             if not btnA.value:
                 # Send Button A
@@ -231,12 +233,14 @@ if __name__ == "__main__":
     event.clear()
     # create the gps_loc_and location class
     gps_lock_and_location = lock_and_data.LockAndData()
+
     # create and run the threads
-    run_radio = ReceiveRFM69Data('rfm_radio', gps_lock_and_location, event, )
-    run_display = DisplayLocation('display data', gps_lock_and_location, event, )
+    radio_args = (gps_lock_and_location, event)
+    run_radio = ReceiveRFM69Data('rfm_radio', *radio_args)
+    run_display = DisplayLocation('display data', *radio_args)
+
     bluetooth_args = (gps_lock_and_location, event,  dictionary_args)
     connect_bluetooth = bluetooth_thread.BluetoothTransmitThread('Bluetooth connection', *bluetooth_args, **dictionary_args)
-
 
     run_radio.start()
     run_display.start()

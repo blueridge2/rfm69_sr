@@ -17,11 +17,13 @@ import time
 import radio_constants
 import socket
 
+
 class BluetoothTransmitThread(threading.Thread):
     """
     this is a thread class for the bluetooth radio
-
     """
+    __slots__ = ['args', 'kwargs', 'lock_location_class', 'event', 'mac_address', 'timeout']
+
     def __init__(self, name, *args, **kwargs):
         """
         this is the init class for the thread
@@ -46,7 +48,7 @@ class BluetoothTransmitThread(threading.Thread):
         self.event = self.args[1]
         self.mac_address = self.kwargs['mac_address']
         self.timeout = self.kwargs.get('timeout', 10)
-        print('mac_address={}, timeout={}'.format(self.mac_address, self.timeout))
+        # print('mac_address={}, timeout={}'.format(self.mac_address, self.timeout))
 
     def connect(self, mac_address, timeout=10):
         """
@@ -57,7 +59,7 @@ class BluetoothTransmitThread(threading.Thread):
         """
         port = 3  # 3 is an arbitrary choice. However, it must match the port used by the client.
         backlog = 1
-        size = 1024
+        # size = 1024
         #
         s = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
         try:
@@ -66,18 +68,17 @@ class BluetoothTransmitThread(threading.Thread):
             print('connect error={}'.format(error))
             s.close()
             return False, False, False
-        print('bound')
         s.listen(backlog)
         s.settimeout(timeout)
         try:
             client, address = s.accept()
-        except Exception as error:
+        except Exception:
             return False, False, False
         return s, client, address
 
     def send_data(self, client, address, data):
         """
-        send the data to the client
+        send the data to the bluetooth client
 
         :param client: the client address to which to send the data
         :param address: the receiver address
@@ -86,8 +87,8 @@ class BluetoothTransmitThread(threading.Thread):
         """
         try:
             byte_data_array = bytearray(('{}\n'.format(data).encode('utf-8')))
-            length = client.send(byte_data_array)
-        except:
+            client.send(byte_data_array)
+        except Exception:
             return False
         return True
 
@@ -105,7 +106,7 @@ class BluetoothTransmitThread(threading.Thread):
         if packet_list is None or packet_list[radio_constants.VALID] != 'A':
             lat_long = 'No valid location'
         else:
-        # latitude has the form of Latitude (DDmm.mm)
+            # latitude has the form of Latitude (DDmm.mm)
             lat_degrees = packet_list[radio_constants.LATITUDE][:2]
             lat_minutes_seconds = packet_list[radio_constants.LATITUDE][2:]
             north_south = '' if packet_list[radio_constants.LATITUDE_NS] == 'N' else '-'
@@ -130,14 +131,17 @@ class BluetoothTransmitThread(threading.Thread):
         counter = 0
         local_socket = None
         while True:
+            if self.event.is_set():
+                return
+            time.sleep(1)
             if not connected:
-                print('not connected')
                 local_socket, client, address = self.connect(mac_address=self.mac_address, timeout=self.timeout)
-
                 if not client or not address:
-                    print('did not connect, so wait {} and continue'.format(1))
+                    # print('did not connect, so wait {} and continue'.format(1))
+                    connected = False
                     time.sleep(1)
-                connected = True
+                else:
+                    connected = True
             if connected:
                 # ok we are connected.
                 packet_list = self.lock_location_class.data
@@ -149,6 +153,3 @@ class BluetoothTransmitThread(threading.Thread):
                     local_socket.close()
                     connected = False
                 # test to see if the it is time to exit
-                if self.event.is_set():
-                    return
-                time.sleep(1)
