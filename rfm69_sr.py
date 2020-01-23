@@ -209,6 +209,7 @@ class ReceiveRFM69Data(threading.Thread):
                 rfm69.send(ack_data, tx_header=ack_tuple)
             time.sleep(1)
 
+
 def check_file(filename):
     """
     check a file for existence and print message
@@ -223,6 +224,7 @@ def check_file(filename):
         print('file {} found our accessible, error=error={}'.format(filename, error))
         exit(-1)
     return data
+
 
 def run():
     """
@@ -258,6 +260,7 @@ def run():
     connect_bluetooth.join()
     run_radio.join()
     run_display.join()
+
 
 if __name__ == "__main__":
     run()
