@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-"""
-This is the thread that runs the bluetooth radio
-"""
+##################################################################################################################
 # Copyright 2020 Ralph Carl Blach III
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"),
@@ -14,6 +12,7 @@ This is the thread that runs the bluetooth radio
 # OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
 # ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH
 # THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+##############################################################################################################
 
 import threading
 import time

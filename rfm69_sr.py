@@ -137,7 +137,9 @@ class DisplayLocation(threading.Thread):
 
 
 class ReceiveRFM69Data(threading.Thread):
-
+    """
+    the class to recieve from th rfm69 radio module
+    """
     # prevent adding external weak adds
     __slots__ = ['name', 'args', 'lock_location_class', 'event']
 
