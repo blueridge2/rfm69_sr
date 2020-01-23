@@ -19,12 +19,15 @@ class LockAndData():
     """
     A class to contain common data for the lock class and location
     """
+
+    __slots__ = ['__lock', '__data']
+
     def __init__(self, data=None):
         """
         The init class for the lock and location
         """
-        self._lock = threading.Lock()
-        self.data = data
+        self.__lock = threading.Lock()
+        self.__data = data
 
     @property
     def data(self):
@@ -32,10 +35,10 @@ class LockAndData():
         A function to lock the data, read it unlock the data and return with the location
         :return a string with the gps location
         """
-        self._lock.acquire()
-        location = self.__data
-        self._lock.release()
-        return location
+        self.__lock.acquire()
+        __location = self.__data
+        self.__lock.release()
+        return __location
 
     @data.setter
     def data(self, data):
@@ -45,6 +48,6 @@ class LockAndData():
         :param data: the to saved in the class
         :return: None
         """
-        self._lock.acquire()
+        self.__lock.acquire()
         self.__data = data
-        self._lock.release()
+        self.__lock.release()
