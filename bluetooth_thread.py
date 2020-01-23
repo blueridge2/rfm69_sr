@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+"""
+This is the thread that runs the bluetooth radio
+"""
 # Copyright 2020 Ralph Carl Blach III
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"),
@@ -14,8 +17,8 @@
 
 import threading
 import time
-import radio_constants
 import socket
+import radio_constants
 
 
 class BluetoothTransmitThread(threading.Thread):
@@ -39,18 +42,16 @@ class BluetoothTransmitThread(threading.Thread):
         if args is None:
             raise ValueError('Args cannot be None')
 
-        if args is None:
-            raise ValueError()
         self.args = args
         self.kwargs = kwargs
         self.lock_location_class = self.args[0]
         self.name = name
         self.event = self.args[1]
-        self.mac_address = self.kwargs['mac_address']
-        self.timeout = self.kwargs.get('timeout', 10)
-        # print('mac_address={}, timeout={}'.format(self.mac_address, self.timeout))
+        self.mac_address = self.kwargs['MacAddress']
+        self.timeout = self.kwargs.get('TimeOut', 10)
 
-    def connect(self, mac_address, timeout=10):
+    @staticmethod
+    def connect(mac_address, timeout=10):
         """
         connect to blue tooth client
 
@@ -61,27 +62,26 @@ class BluetoothTransmitThread(threading.Thread):
         backlog = 1
         # size = 1024
         #
-        s = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
+        local_socket = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
         try:
-            s.bind((mac_address, port))
-        except Exception as error:
-            print('connect error={}'.format(error))
-            s.close()
+            local_socket.bind((mac_address, port))
+        except Exception:
+            local_socket.close()
             return False, False, False
-        s.listen(backlog)
-        s.settimeout(timeout)
+        local_socket.listen(backlog)
+        local_socket.settimeout(timeout)
         try:
-            client, address = s.accept()
+            client, address = local_socket.accept()
         except Exception:
             return False, False, False
-        return s, client, address
+        return local_socket, client, address
 
-    def send_data(self, client, address, data):
+    @staticmethod
+    def send_data(client, data):
         """
         send the data to the bluetooth client
 
         :param client: the client address to which to send the data
-        :param address: the receiver address
         :param data: the data to send,should be a string
         :return True if the send is successful or False if not
         """
@@ -92,7 +92,8 @@ class BluetoothTransmitThread(threading.Thread):
             return False
         return True
 
-    def process_packet(self, packet_list, counter):
+    @staticmethod
+    def process_packet(packet_list, counter):
         """
         process the packet
         :param packet: a list that is either a packet or none
@@ -147,7 +148,7 @@ class BluetoothTransmitThread(threading.Thread):
                 packet_list = self.lock_location_class.data
                 lat_long = self.process_packet(packet_list, counter)
                 counter = counter + 1 if counter < 16 else 0
-                send_status = self.send_data(client, address, lat_long)
+                send_status = self.send_data(client, lat_long)
                 if not send_status:
                     client.close()
                     local_socket.close()

@@ -165,9 +165,9 @@ class ReceiveRFM69Data(threading.Thread):
 
         It does not exit and it does not return
         """
-        btnA = DigitalInOut(board.D5)
-        btnA.direction = Direction.INPUT
-        btnA.pull = Pull.UP
+        button_a = DigitalInOut(board.D5)
+        button_a.direction = Direction.INPUT
+        button_a.pull = Pull.UP
 
         # board interrupt ping gpio 22
         gpio22 = DigitalInOut(board.D22)
@@ -175,12 +175,12 @@ class ReceiveRFM69Data(threading.Thread):
         gpio22.pull = Pull.UP
 
         # Configure Packet Radio
-        CS = DigitalInOut(board.CE1)
-        RESET = DigitalInOut(board.D25)
+        chip_select = DigitalInOut(board.CE1)
+        reset_radio = DigitalInOut(board.D25)
         spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
-        rfm69 = adafruit_rfm69.RFM69(spi, CS, RESET, 433.0, sync_word=b'\x2D\xD4')
+        rfm69 = adafruit_rfm69.RFM69(spi, chip_select, reset_radio, 433.0, sync_word=b'\x2D\xD4')
         while True:
-            if not btnA.value:
+            if not button_a.value:
                 # Send Button A
                 # button_a_data = bytes("Button A!\r\n", "utf-8")
                 self.event.set()
@@ -196,7 +196,6 @@ class ReceiveRFM69Data(threading.Thread):
                 packet_list = packet_text.split(',')
                 self.lock_location_class.data = packet_list
                 if packet_list[radio_constants.VALID] != 'A':
-                    print('packet not valid')
                     # the packet does not have a valid gps location
                     self.lock_location_class.data = 'not valid'
                     time.sleep(1)
@@ -208,26 +207,34 @@ class ReceiveRFM69Data(threading.Thread):
                 rfm69.send(ack_data, tx_header=ack_tuple)
             time.sleep(1)
 
+def check_file(filename):
+    """
+    check a file for existence and print message
 
-if __name__ == "__main__":
+    :param filename: the file name to check
+    :return:
+    """
+
+    try:
+        data = open(filename, "r")
+    except Exception as error:
+        print('file {} found our accessible, error=error={}'.format(filename, error))
+        exit(-1)
+    return data
+
+def run():
+    """
+    run the main program
+    :return: none
+    """
     if not os.path.exists('font5x8.bin'):
         print('the file font5x8.bin is not present in the current directory.')
         print('use the command wget -O font5x8.bin \
                 https://github.com/adafruit/Adafruit_CircuitPython_framebuf/blob/master/examples/font5x8.bin?raw=true to download')
         exit(-1)
-    # next read the mac address from the mac address file
-    try:
-        mac_address_file = open("mac_address", "r")
-    except Exception as error:
-        print('file not found our accessible, error=error={}'.format(error))
-        exit(-1)
+    mac_address = check_file('mac_address')
 
-    try:
-        mac_address = mac_address_file.read()
-    except Exception as error:
-        print('read of mac_address failed, error={}'.format(error))
-
-    dictionary_args = {'mac_address': mac_address, 'timeout': 30}
+    dictionary_args = {'MacAddress': mac_address, 'TimeOut': 30}
     # set up an event for exit and make sure it is clear
     event = threading.Event()
     event.clear()
@@ -239,7 +246,7 @@ if __name__ == "__main__":
     run_radio = ReceiveRFM69Data('rfm_radio', *radio_args)
     run_display = DisplayLocation('display data', *radio_args)
 
-    bluetooth_args = (gps_lock_and_location, event,  dictionary_args)
+    bluetooth_args = (gps_lock_and_location, event, dictionary_args)
     connect_bluetooth = bluetooth_thread.BluetoothTransmitThread('Bluetooth connection', *bluetooth_args, **dictionary_args)
 
     run_radio.start()
@@ -249,3 +256,6 @@ if __name__ == "__main__":
     connect_bluetooth.join()
     run_radio.join()
     run_display.join()
+
+if __name__ == "__main__":
+    run()

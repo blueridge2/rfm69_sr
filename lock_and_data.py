@@ -15,7 +15,7 @@
 import threading
 
 
-class LockAndData():
+class LockAndData(object):
     """
     A class to contain common data for the lock class and location
     """
