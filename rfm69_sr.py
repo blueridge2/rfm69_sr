@@ -222,7 +222,7 @@ def check_file(filename):
     except Exception as error:
         print('file {} found our accessible, error=error={}'.format(filename, error))
         exit(-1)
-    return file_handle.read()
+    return file_handle.read(radio_constants.BLUETOOTH_MAC_LENGTH)
 
 
 def run():
