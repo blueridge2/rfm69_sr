@@ -217,13 +217,12 @@ def check_file(filename):
     :param filename: the file name to check
     :return:
     """
-
     try:
-        data = open(filename, "r")
+        file_handle = open(filename, "r")
     except Exception as error:
         print('file {} found our accessible, error=error={}'.format(filename, error))
         exit(-1)
-    return data
+    return file_handle.read()
 
 
 def run():
@@ -237,6 +236,7 @@ def run():
                 https://github.com/adafruit/Adafruit_CircuitPython_framebuf/blob/master/examples/font5x8.bin?raw=true to download')
         exit(-1)
     mac_address = check_file('mac_address')
+    print('mac_address={}'.format(mac_address))
 
     dictionary_args = {'MacAddress': mac_address, 'TimeOut': 30}
     # set up an event for exit and make sure it is clear
