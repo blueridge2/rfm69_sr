@@ -20,9 +20,13 @@
 # Author: Ralph Blach reworked for my purposes
 # you will need to download font5x8.bin from https://github.com/adafruit/Adafruit_CircuitPython_framebuf/raw/master/examples/font5x8.bin
 # you could use  wget -O font5x8.bin https://github.com/adafruit/Adafruit_CircuitPython_framebuf/blob/master/examples/font5x8.bin?raw=true
-
+#
+# the callsign and rfm69 radio network are stored in a file called callsign.  The first six bytes are the callsign and the next two bytes
+# are the radio network.  Only the first 8 bytes of the file are used.  The if thee call sign is less than 6 bytes, then it must be padded with
+# spaces
+#
 # The header is 4 bytes
-# byte 0 is the target address,( this machince as the receiver)
+# byte 0 is the target address,( this machine as the receiver)
 # byte 1 is the source address( the sender/transmitter)
 # byte 2 not used by this program( a counter set by the sender/transmitter)
 # byte 3 status 0 = Data 0x80 is an ack
@@ -31,8 +35,10 @@
 # an invalid packet minus the 4 byte header will look like ['kf4wbk', 'V']
 
 # Import Python System Libraries
-import time
+import argparse
+import logging
 import os
+import time
 import threading
 # Import Blinka Libraries
 # import the SSD1306 module.
@@ -138,10 +144,10 @@ class DisplayLocation(threading.Thread):
 
 class ReceiveRFM69Data(threading.Thread):
     """
-    the class to recieve from th rfm69 radio module
+    the class to receive from th rfm69 radio module
     """
     # prevent adding external weak adds
-    __slots__ = ['name', 'args', 'lock_location_class', 'event']
+    __slots__ = ['name', 'args', 'lock_location_class', 'event', 'network']
 
     def __init__(self, name, *args):
         """
@@ -156,10 +162,12 @@ class ReceiveRFM69Data(threading.Thread):
         super(ReceiveRFM69Data, self).__init__(name=name, args=args)
         self.name = name
         self.args = args
+
         if args is None:
             raise ValueError('args cannot be None')
         self.lock_location_class = self.args[0]
         self.event = self.args[1]
+        self.network = self.args[2]
 
     def run(self):
         """
@@ -180,7 +188,8 @@ class ReceiveRFM69Data(threading.Thread):
         chip_select = DigitalInOut(board.CE1)
         reset_radio = DigitalInOut(board.D25)
         spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
-        rfm69 = adafruit_rfm69.RFM69(spi, chip_select, reset_radio, 433.0, sync_word=b'\x2D\xD4')
+        # rfm69 = adafruit_rfm69.RFM69(spi, chip_select, reset_radio, 433.0, sync_word=b'\x2D\xD4')
+        rfm69 = adafruit_rfm69.RFM69(spi, chip_select, reset_radio, 433.0, sync_word=self.network)
         while True:
             if not button_a.value:
                 # Send Button A
@@ -210,18 +219,20 @@ class ReceiveRFM69Data(threading.Thread):
             time.sleep(1)
 
 
-def check_file(filename):
+def check_file(filename, length):
     """
     check a file for existence and print message
 
     :param filename: the file name to check
+    :param length the number of characters to read
     :return:
     """
     try:
-        file_handle = open(filename, "r")
+        file_handle = open(filename, "rb")
     except Exception as error:
         print('file {} found our accessible, error=error={}'.format(filename, error))
         exit(-1)
+
     return file_handle.read(radio_constants.BLUETOOTH_MAC_LENGTH)
 
 
@@ -230,14 +241,30 @@ def run():
     run the main program
     :return: none
     """
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--level', choices=['info', 'debug'], default='debug',  help='The debug log level (default: %(default)s)')
+    parser.add_argument('--log_fn', type=str, default='/tmp/rfm_radio', help='Default log file name - (default: %(default)s)')
+    parser.add_argument('--call_sign',type=str, default='./call_sign', help='Binary file that contains the '
+                                                                           'call sign and network default:  %(default)s)')
+    args = parser.parse_args()
+    debug_level = args.level
+    log_file = args.log_fn
+    print ('args = {}'.format(debug_level))
+
+
     if not os.path.exists('font5x8.bin'):
         print('the file font5x8.bin is not present in the current directory.')
         print('use the command wget -O font5x8.bin \
                 https://github.com/adafruit/Adafruit_CircuitPython_framebuf/blob/master/examples/font5x8.bin?raw=true to download')
         exit(-1)
-    mac_address = check_file('mac_address')
-    print('mac_address={}'.format(mac_address))
+    if not os.path.exists(args.call_sign):
+        print('the file {} is not present'.format(args.call_sign))
+        exit(-1)
+    mac_address = check_file('mac_address', radio_constants.BLUETOOTH_MAC_LENGTH)
+    callsign_network = check_file(args.call_sign, radio_constants.CALLSIGN_LENGTH)
 
+    network = callsign_network[6:]
     dictionary_args = {'MacAddress': mac_address, 'TimeOut': 30}
     # set up an event for exit and make sure it is clear
     event = threading.Event()
@@ -246,7 +273,7 @@ def run():
     gps_lock_and_location = lock_and_data.LockAndData()
 
     # create and run the threads
-    radio_args = (gps_lock_and_location, event)
+    radio_args = (gps_lock_and_location, event, network)
     run_radio = ReceiveRFM69Data('rfm_radio', *radio_args)
     run_display = DisplayLocation('display data', *radio_args)
 

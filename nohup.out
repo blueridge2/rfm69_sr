@@ -1,0 +1,8 @@
+OpenJDK Server VM warning: Option UseConcMarkSweepGC was deprecated in version 9.0 and will likely be removed in a future release.
+Gtk-Message: 20:17:51.756: Failed to load module "canberra-gtk-module"
+WARNING: An illegal reflective access operation has occurred
+WARNING: Illegal reflective access by com.intellij.util.ReflectionUtil to field sun.awt.X11.XToolkit.awtAppClassName
+WARNING: Please consider reporting this to the maintainers of com.intellij.util.ReflectionUtil
+WARNING: Use --illegal-access=warn to enable warnings of further illegal reflective access operations
+WARNING: All illegal access operations will be denied in a future release
+2020-01-22 20:17:56,733 [   5920]   WARN - api.vfs.impl.local.FileWatcher - Unfortunately, JetBrains does not officially support native file watcher for this architecture. Please follow <a href="https://confluence.jetbrains.com/display/IDEADEV/Compiling+File+Watcher">these instructions</a> to compile it yourself. 
