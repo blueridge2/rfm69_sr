@@ -36,7 +36,7 @@
 
 # Import Python System Libraries
 import argparse
-import logging
+# import logging
 import os
 import time
 import threading
@@ -233,7 +233,7 @@ def check_file(filename, length):
         print('file {} found our accessible, error=error={}'.format(filename, error))
         exit(-1)
 
-    return file_handle.read(radio_constants.BLUETOOTH_MAC_LENGTH)
+    return file_handle.read(length)
 
 
 def run():
@@ -243,15 +243,14 @@ def run():
     """
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--level', choices=['info', 'debug'], default='debug',  help='The debug log level (default: %(default)s)')
+    parser.add_argument('--level', choices=['info', 'debug'], default='debug', help='The debug log level (default: %(default)s)')
     parser.add_argument('--log_fn', type=str, default='/tmp/rfm_radio', help='Default log file name - (default: %(default)s)')
-    parser.add_argument('--call_sign',type=str, default='./call_sign', help='Binary file that contains the '
-                                                                           'call sign and network default:  %(default)s)')
+    parser.add_argument('--call_sign', type=str, default='./call_sign', help='Binary file that contains the '
+                                                                             'call sign and network default:  %(default)s)')
     args = parser.parse_args()
     debug_level = args.level
-    log_file = args.log_fn
-    print ('args = {}'.format(debug_level))
-
+    # log_file = args.log_fn
+    print('args = {}'.format(debug_level))
 
     if not os.path.exists('font5x8.bin'):
         print('the file font5x8.bin is not present in the current directory.')

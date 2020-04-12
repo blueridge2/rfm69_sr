@@ -15,7 +15,7 @@
 import threading
 
 
-class LockAndData():  # pylint: disable=R0903
+class LockAndData(object):  # pylint: disable=R0903
     """
     A class to contain common data for the lock class and location
     """
