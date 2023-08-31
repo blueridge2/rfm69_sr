@@ -15,9 +15,25 @@
 ##############################################################################################################
 
 import threading
+import os
+import stat
 import time
 import socket
 import radio_constants
+
+def char_dev_exists(dev_node: str = None) -> bool:
+    """
+    function so see if a character device is present
+    @param dev_node: of the device node
+    @return bool, true if present, fails if not
+
+    """
+    try:
+        stat_value = os.stat(dev_node)
+    except FileNotFoundError as error:
+        return False
+
+    return True if stat.S_ISCHR(stat_value.st_mode) else False
 
 
 class BluetoothTransmitThread(threading.Thread):
@@ -50,29 +66,56 @@ class BluetoothTransmitThread(threading.Thread):
         self.timeout = self.kwargs.get('TimeOut', 10)
 
     @staticmethod
-    def connect(mac_address, timeout=10):
+    def rfcomm_connect(device: str = '/dev/rfcomm0'):
+        """
+        connect to an rfcomm serial port on bluetooth
+        @param device: the sting for an rfcomm device devaults to /dev/rfcomm0
+        @returns file_object
+        """
+        device_exist = False
+        while not device_exist:
+            time.sleep(1)
+            device_exists = char_dev_exists(device)
+            if device_exists:
+                break
+        try:
+            file_handle = open(device, "w")
+        except OSError as error:
+            return False
+        return file_handle
+
+    @staticmethod
+    def connect(mac_address, timeout=30):
         """
         connect to blue tooth client
 
         :param mac_address: the mac address of the client to which we will connect
+        :param timeout: the length of time in seconds to wait for a connect
         :return: at tuple with the client, and address if successful, False, false if it fails
         """
         port = 3  # 3 is an arbitrary choice. However, it must match the port used by the client.
+        print(f'port = {port}')
         backlog = 1
         # size = 1024
         #
         local_socket = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
+        print(f'local_socket={local_socket}  mac address = {mac_address}')
         try:
             local_socket.bind((mac_address, port))
-        except Exception:
+        except Exception as error:
             local_socket.close()
-            return False, False, False
+            print(f'bluetooth bindsocket failed error = {error}')
+            return (False, False, False)
+        else:
+            print("bind worked ok")
         local_socket.listen(backlog)
         local_socket.settimeout(timeout)
         try:
             client, address = local_socket.accept()
-        except Exception:
-            return False, False, False
+        except Exception as error:
+            print(f'bluetooth accept failed error = {error}')
+            return (False, False, False)
+        print('bluetooth accept passed')
         return local_socket, client, address
 
     @staticmethod
@@ -129,27 +172,30 @@ class BluetoothTransmitThread(threading.Thread):
         """
         connected = False
         counter = 0
-        local_socket = None
+        file_handle = None
         while True:
             if self.event.is_set():
                 return
-            time.sleep(1)
+            time.sleep(.5)
             if not connected:
-                local_socket, client, address = self.connect(mac_address=self.mac_address, timeout=self.timeout)
-                if not client or not address:
-                    # print('did not connect, so wait {} and continue'.format(1))
-                    connected = False
-                    time.sleep(1)
-                else:
-                    connected = True
-            if connected:
+
+                file_handle = self.rfcomm_connect('/dev/rfcomm0')
+
+                connected = True
+            elif connected:
                 # ok we are connected.
                 packet_list = self.lock_location_class.data
                 lat_long = self.process_packet(packet_list, counter)
                 counter = counter + 1 if counter < 16 else 0
-                send_status = self.send_data(client, lat_long)
-                if not send_status:
-                    client.close()
-                    local_socket.close()
+                lat_long = lat_long + "counter" + "\r\n"
+                try:
+                    file_handle.write(lat_long)
+                except OSError as error:
+                    print(f'oserror on write = {error}')
                     connected = False
-                # test to see if the it is time to exit
+                    try:
+                        file_handle.close()
+                    except OSError as error1:
+                        print(f'oserror on close ={error1} ')
+
+

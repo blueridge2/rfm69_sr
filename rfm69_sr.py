@@ -198,12 +198,13 @@ class ReceiveRFM69Data(threading.Thread):
                 time.sleep(1)
                 return
             # check for packet rx
-            packet = rfm69.receive(with_header=True, rx_filter=1)
+            packet = rfm69.receive(with_header=True)
             if packet is not None:
                 # send the data to data class
                 header = packet[0:4]
                 processed_packet = packet[4:]
                 packet_text = str(processed_packet, "utf-8")
+                print(f'packet.txt={packet_text}')
                 packet_list = packet_text.split(',')
                 self.lock_location_class.data = packet_list
                 if packet_list[radio_constants.VALID] != 'A':
@@ -215,7 +216,7 @@ class ReceiveRFM69Data(threading.Thread):
                 ack_data = bytes('a', 'utf-8')
                 # create of tuple of to, from, id, status,
                 ack_tuple = (header[1], header[0], header[2], 0x80)
-                rfm69.send(ack_data, tx_header=ack_tuple)
+                rfm69.send(ack_data, destination=header[1], node=header[0], identifier=header[2], flags=0x80)
             time.sleep(1)
 
 
@@ -245,8 +246,8 @@ def run():
     parser = argparse.ArgumentParser()
     parser.add_argument('--level', choices=['info', 'debug'], default='debug', help='The debug log level (default: %(default)s)')
     parser.add_argument('--log_fn', type=str, default='/tmp/rfm_radio', help='Default log file name - (default: %(default)s)')
-    parser.add_argument('--call_sign', type=str, default='./call_sign', help='Binary file that contains the '
-                                                                             'call sign and network default:  %(default)s)')
+    parser.add_argument('--call_sign', type=str, default='./call_sign', help='Binary file that contains the call sign:  %(default)s)')
+    parser.add_argument('--sync_word', type=int, default=0x2dd4, help='Binary file that contains the network default:  %(default)s)')
     args = parser.parse_args()
     debug_level = args.level
     # log_file = args.log_fn
@@ -262,8 +263,9 @@ def run():
         exit(-1)
     mac_address = check_file('mac_address', radio_constants.BLUETOOTH_MAC_LENGTH)
     callsign_network = check_file(args.call_sign, radio_constants.CALLSIGN_LENGTH)
+    network = args.sync_word.to_bytes(length=2, byteorder='big')
 
-    network = callsign_network[6:]
+
     dictionary_args = {'MacAddress': mac_address, 'TimeOut': 30}
     # set up an event for exit and make sure it is clear
     event = threading.Event()
