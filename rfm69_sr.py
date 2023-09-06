@@ -291,7 +291,6 @@ def run():
     callsign_network = check_file(args.call_sign, radio_constants.CALLSIGN_LENGTH)
     network = args.sync_word.to_bytes(length=2, byteorder='big')
 
-
     dictionary_args = {'MacAddress': mac_address, 'TimeOut': 30}
     # set up an event for exit and make sure it is clear
     event = threading.Event()

@@ -66,25 +66,6 @@ class BluetoothTransmitThread(threading.Thread):
         self.timeout = self.kwargs.get('TimeOut', 30)
 
     @staticmethod
-    def rfcomm_connect(device: str = '/dev/rfcomm0'):
-        """
-        connect to an rfcomm serial port on bluetooth
-        @param device: the sting for an rfcomm device devaults to /dev/rfcomm0
-        @returns file_object
-        """
-        device_exist = False
-        while not device_exist:
-            time.sleep(1)
-            device_exists = char_dev_exists(device)
-            if device_exists:
-                break
-        try:
-            file_handle = open(device, "w")
-        except OSError as error:
-            return False
-        return file_handle
-
-    @staticmethod
     def bluetooth_connect(mac_address, timeout=30):
         """
         connect to blue tooth client
@@ -179,20 +160,23 @@ class BluetoothTransmitThread(threading.Thread):
                 return
             time.sleep(.5)
             if not connected:
-
                 local_socket, bluetooth_write_socket, address_pair = self.bluetooth_connect(mac_address=self.mac_address)
-
-                connected = True
+                if local_socket:
+                    connected = True
             elif connected:
                 # ok we are connected.
                 packet_list = self.lock_location_class.data
                 lat_long = self.process_packet(packet_list, counter)
                 counter = counter + 1 if counter < 16 else 0
                 lat_long = lat_long + "counter" + "\r\n"
-                try:
-                    self.send_data(bluetooth_write_socket, lat_long)
-                except Exception as error:
-                    print(f'oserror on write = {error}')
+
+                return_code = self.send_data(bluetooth_write_socket, lat_long)
+                if not return_code:
+                    connected = False
+                    bluetooth_write_socket.close()
+                    local_socket.close()
+
+
 
 
 
