@@ -63,7 +63,7 @@ class BluetoothTransmitThread(threading.Thread):
         self.name = name
         self.event = self.args[1]
         self.mac_address = self.kwargs['MacAddress']
-        self.timeout = self.kwargs.get('TimeOut', 10)
+        self.timeout = self.kwargs.get('TimeOut', 30)
 
     @staticmethod
     def rfcomm_connect(device: str = '/dev/rfcomm0'):
@@ -85,16 +85,17 @@ class BluetoothTransmitThread(threading.Thread):
         return file_handle
 
     @staticmethod
-    def connect(mac_address, timeout=30):
+    def bluetooth_connect(mac_address, timeout=30):
         """
         connect to blue tooth client
 
         :param mac_address: the mac address of the client to which we will connect
         :param timeout: the length of time in seconds to wait for a connect
-        :return: at tuple with the client, and address if successful, False, false if it fails
+        :return: at tuple with the local_socket, client_socket, and address if successful, False, false if it fails
+                note the client socket is used to write
         """
-        port = 3  # 3 is an arbitrary choice. However, it must match the port used by the client.
-        print(f'port = {port}')
+        port = 4  # 3 is an arbitrary choice. However, it must match the port used by the client.
+        print(f'port = {port}, mac_address = {mac_address}')
         backlog = 1
         # size = 1024
         #
@@ -104,32 +105,32 @@ class BluetoothTransmitThread(threading.Thread):
             local_socket.bind((mac_address, port))
         except Exception as error:
             local_socket.close()
-            print(f'bluetooth bindsocket failed error = {error}')
-            return (False, False, False)
+            print(f'bluetooth bind socket failed error = {error}')
+            return False, False, False
         else:
             print("bind worked ok")
         local_socket.listen(backlog)
         local_socket.settimeout(timeout)
         try:
-            client, address = local_socket.accept()
+            client_socket, address = local_socket.accept()
         except Exception as error:
             print(f'bluetooth accept failed error = {error}')
-            return (False, False, False)
+            return False, False, False
         print('bluetooth accept passed')
-        return local_socket, client, address
+        return local_socket, client_socket, address
 
     @staticmethod
-    def send_data(client, data):
+    def send_data(write_socket, data):
         """
         send the data to the bluetooth client
 
-        :param client: the client address to which to send the data
+        :param write_socket: the client address to which to send the data
         :param data: the data to send,should be a string
         :return True if the send is successful or False if not
         """
         try:
             byte_data_array = bytearray(('{}\n'.format(data).encode('utf-8')))
-            client.send(byte_data_array)
+            write_socket.send(byte_data_array)
         except Exception:
             return False
         return True
@@ -138,7 +139,7 @@ class BluetoothTransmitThread(threading.Thread):
     def process_packet(packet_list, counter):
         """
         process the packet
-        :param packet: a list that is either a packet or none
+        :param packet_list: a list that is either a packet or none
         :param counter a counter ot show movement on phone
         :return: a string with the packet in it
         """
@@ -172,14 +173,14 @@ class BluetoothTransmitThread(threading.Thread):
         """
         connected = False
         counter = 0
-        file_handle = None
+
         while True:
             if self.event.is_set():
                 return
             time.sleep(.5)
             if not connected:
 
-                file_handle = self.rfcomm_connect('/dev/rfcomm0')
+                local_socket, bluetooth_write_socket, address_pair = self.bluetooth_connect(mac_address=self.mac_address)
 
                 connected = True
             elif connected:
@@ -189,13 +190,9 @@ class BluetoothTransmitThread(threading.Thread):
                 counter = counter + 1 if counter < 16 else 0
                 lat_long = lat_long + "counter" + "\r\n"
                 try:
-                    file_handle.write(lat_long)
-                except OSError as error:
+                    self.send_data(bluetooth_write_socket, lat_long)
+                except Exception as error:
                     print(f'oserror on write = {error}')
-                    connected = False
-                    try:
-                        file_handle.close()
-                    except OSError as error1:
-                        print(f'oserror on close ={error1} ')
+
 
 

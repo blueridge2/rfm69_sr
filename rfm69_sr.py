@@ -24,6 +24,7 @@
 # the callsign and rfm69 radio network are stored in a file called callsign.  The first six bytes are the callsign and the next two bytes
 # are the radio network.  Only the first 8 bytes of the file are used.  The if thee call sign is less than 6 bytes, then it must be padded with
 # spaces
+# the bluetooth mac address is the Mac address of the local bluetooth device and this is gotten by using hci tool.
 #
 # The header is 4 bytes
 # byte 0 is the target address,( this machine as the receiver)
@@ -53,6 +54,7 @@ from digitalio import Pull
 import lock_and_data
 import bluetooth_thread
 import radio_constants
+import subprocess
 
 
 class DisplayLocation(threading.Thread):
@@ -237,6 +239,23 @@ def check_file(filename, length):
     return file_handle.read(length)
 
 
+def get_local_bluetooth_mac_address():
+    """
+    get the local bluetooth mack address by suing the hcitool
+    @returns the local bluetooth mac address, or the return code
+    """
+    result = subprocess.run(['hcitool', 'dev'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    print(f'result.returncode={result.returncode}')
+    if result.returncode:
+        print(f'{result.args} command did not execute successfully')
+        return result.returncode, False
+    standeard_out = result.stdout.decode('utf-8').splitlines()
+    mac_address_line = standeard_out[1].split()
+    mac_address = mac_address_line[1]
+    print(f'using mac_address={mac_address}')
+    return result.returncode, mac_address
+
+
 def run():
     """
     run the main program
@@ -248,6 +267,7 @@ def run():
     parser.add_argument('--log_fn', type=str, default='/tmp/rfm_radio', help='Default log file name - (default: %(default)s)')
     parser.add_argument('--call_sign', type=str, default='./call_sign', help='Binary file that contains the call sign:  %(default)s)')
     parser.add_argument('--sync_word', type=int, default=0x2dd4, help='Binary file that contains the network default:  %(default)s)')
+    parser.add_argument('--mac_address', type=str, default=None, help='Siring that has the Mac address fo the bluetooth device,:  %(default)s)')
     args = parser.parse_args()
     debug_level = args.level
     # log_file = args.log_fn
@@ -261,7 +281,13 @@ def run():
     if not os.path.exists(args.call_sign):
         print('the file {} is not present'.format(args.call_sign))
         exit(-1)
-    mac_address = check_file('mac_address', radio_constants.BLUETOOTH_MAC_LENGTH)
+    if args.mac_address:
+        mac_address = args.mac_address
+    else:
+        got_mac, mac_address = get_local_bluetooth_mac_address()
+        if got_mac:
+            raise ValueError('Failed to get the mac address from the device')
+
     callsign_network = check_file(args.call_sign, radio_constants.CALLSIGN_LENGTH)
     network = args.sync_word.to_bytes(length=2, byteorder='big')
 
