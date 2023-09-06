@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ##################################################################################################################
-# Copyright 2020 Ralph Carl Blach III
+# Copyright 2020, 2023 Ralph Carl Blach III
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"),
 # to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute,
@@ -64,6 +64,7 @@ class BluetoothTransmitThread(threading.Thread):
         self.event = self.args[1]
         self.mac_address = self.kwargs['MacAddress']
         self.timeout = self.kwargs.get('TimeOut', 30)
+        self.port = self.kwargs.get('RfcommPort', 4)
 
     @staticmethod
     def bluetooth_connect(mac_address, bluetooth_port:int = 4, timeout: int = 30):
@@ -71,12 +72,12 @@ class BluetoothTransmitThread(threading.Thread):
         connect to blue tooth client
 
         :param mac_address: the mac address of the client to which we will connect
-        :param bluetooth_port: the rfcomm bluetooth port
+        :param bluetooth_port: the rfcomm bluetooth port, However, it must match the bluetooth_port used by the client.
         :param timeout: the length of time in seconds to wait for a connect
         :return: at tuple with the local_socket, client_socket, and address if successful, False, false if it fails
                 note the client socket is used to write
         """
-        bluetooth_port = 4  # 3 is an arbitrary choice. However, it must match the bluetooth_port used by the client.
+
         print(f'bluetooth_port = {bluetooth_port}, mac_address = {mac_address}')
         backlog = 1
         # size = 1024

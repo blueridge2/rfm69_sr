@@ -268,6 +268,7 @@ def run():
     parser.add_argument('--call_sign', type=str, default='./call_sign', help='Binary file that contains the call sign:  %(default)s)')
     parser.add_argument('--sync_word', type=int, default=0x2dd4, help='Binary file that contains the network default:  %(default)s)')
     parser.add_argument('--mac_address', type=str, default=None, help='Siring that has the Mac address fo the bluetooth device,:  %(default)s)')
+    parser.add_argument('--rfcomm_port', type=int, default=4, help='The rfcomm port:  %(default)s)')
     args = parser.parse_args()
     debug_level = args.level
     # log_file = args.log_fn
@@ -291,7 +292,7 @@ def run():
     callsign_network = check_file(args.call_sign, radio_constants.CALLSIGN_LENGTH)
     network = args.sync_word.to_bytes(length=2, byteorder='big')
 
-    dictionary_args = {'MacAddress': mac_address, 'TimeOut': 30}
+    dictionary_args = {'MacAddress': mac_address, 'TimeOut': 30, 'RfcommPort': args.rfcomm_port}
     # set up an event for exit and make sure it is clear
     event = threading.Event()
     event.clear()
