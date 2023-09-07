@@ -21,20 +21,6 @@ import time
 import socket
 import radio_constants
 
-def char_dev_exists(dev_node: str = None) -> bool:
-    """
-    function so see if a character device is present
-    @param dev_node: of the device node
-    @return bool, true if present, fails if not
-
-    """
-    try:
-        stat_value = os.stat(dev_node)
-    except FileNotFoundError as error:
-        return False
-
-    return True if stat.S_ISCHR(stat_value.st_mode) else False
-
 
 class BluetoothTransmitThread(threading.Thread):
     """
@@ -177,8 +163,3 @@ class BluetoothTransmitThread(threading.Thread):
                     connected = False
                     bluetooth_write_socket.close()
                     local_socket.close()
-
-
-
-
-
