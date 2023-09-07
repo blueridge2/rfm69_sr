@@ -37,7 +37,6 @@
 
 # Import Python System Libraries
 import argparse
-# import logging
 import os
 import time
 import threading
@@ -52,6 +51,7 @@ from digitalio import DigitalInOut
 from digitalio import Direction
 from digitalio import Pull
 import lock_and_data
+import logging
 import bluetooth_thread
 import radio_constants
 import subprocess
@@ -84,6 +84,7 @@ class DisplayLocation(threading.Thread):
         self.lock_location_class = self.args[0]
         self.name = name
         self.event = self.args[1]
+        self.log = self.args[2]
 
     def run(self):
         """
@@ -138,7 +139,7 @@ class DisplayLocation(threading.Thread):
             display.text('valid, {} {:01x}'.format(callsign, counter & 0xf), 0, 24, 1)
             display.show()
             counter = counter + 1 if counter < 16 else 0
-            # test to see if the it is time to exit
+            # test to see if is time to exit
             if self.event.is_set():
                 return
             time.sleep(1)
@@ -170,6 +171,7 @@ class ReceiveRFM69Data(threading.Thread):
         self.lock_location_class = self.args[0]
         self.event = self.args[1]
         self.network = self.args[2]
+        self.log = self.args[3]
 
     def run(self):
         """
@@ -206,7 +208,7 @@ class ReceiveRFM69Data(threading.Thread):
                 header = packet[0:4]
                 processed_packet = packet[4:]
                 packet_text = str(processed_packet, "utf-8")
-                print(f'packet.txt={packet_text}')
+                self.log(f'packet.txt={packet_text}')
                 packet_list = packet_text.split(',')
                 self.lock_location_class.data = packet_list
                 if packet_list[radio_constants.VALID] != 'A':
@@ -272,7 +274,8 @@ def run():
     args = parser.parse_args()
     debug_level = args.level
     # log_file = args.log_fn
-    print('args = {}'.format(debug_level))
+    log = logging.Logging()
+    log.log('args = {}'.format(debug_level))
 
     if not os.path.exists('font5x8.bin'):
         print('the file font5x8.bin is not present in the current directory.')
@@ -300,11 +303,11 @@ def run():
     gps_lock_and_location = lock_and_data.LockAndData()
 
     # create and run the threads
-    radio_args = (gps_lock_and_location, event, network)
+    radio_args = (gps_lock_and_location, event, network, log.log)
     run_radio = ReceiveRFM69Data('rfm_radio', *radio_args)
-    run_display = DisplayLocation('display data', *radio_args)
+    run_display = DisplayLocation('display data', *radio_args, log.log)
 
-    bluetooth_args = (gps_lock_and_location, event, dictionary_args)
+    bluetooth_args = (gps_lock_and_location, event, dictionary_args, log.log)
     connect_bluetooth = bluetooth_thread.BluetoothTransmitThread('Bluetooth connection', *bluetooth_args, **dictionary_args)
 
     run_radio.start()

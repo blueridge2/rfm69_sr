@@ -13,13 +13,13 @@
 # ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH
 # THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #######################################################################################################################################
-
-CALLSIGN = 0
-VALID = 1
-LATITUDE = 2
-LATITUDE_NS = 3
-LONGITUDE = 4
-LONGITUDE_EW = 5
-BLUETOOTH_MAC_LENGTH = 17
-CALLSIGN_LENGTH = 8     # 6 CHARACTERS + 2 FOR NETWORK
+from typing import Final
+CALLSIGN: Final[int] = 0
+VALID: Final[int] = 1
+LATITUDE: Final[int] = 2
+LATITUDE_NS: Final[int] = 3
+LONGITUDE: Final[int] = 4
+LONGITUDE_EW: Final[int] = 5
+BLUETOOTH_MAC_LENGTH: Final[int] = 17
+CALLSIGN_LENGTH: Final[int] = 8     # 6 CHARACTERS + 2 FOR NETWORK
 
