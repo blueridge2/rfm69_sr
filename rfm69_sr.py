@@ -235,7 +235,7 @@ def check_file(filename, length):
     try:
         file_handle = open(filename, "rb")
     except Exception as error:
-        print('file {} found our accessible, error=error={}'.format(filename, error))
+        log.log('file {} found our accessible, error=error={}'.format(filename, error))
         exit(-1)
 
     return file_handle.read(length)
@@ -246,15 +246,16 @@ def get_local_bluetooth_mac_address():
     get the local bluetooth mack address by suing the hcitool
     @returns the local bluetooth mac address, or the return code
     """
+    log = logging.Logging()
     result = subprocess.run(['hcitool', 'dev'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    print(f'result.returncode={result.returncode}')
+    log.log(f'result.returncode={result.returncode}')
     if result.returncode:
-        print(f'{result.args} command did not execute successfully')
+        log.log(f'{result.args} command did not execute successfully')
         return result.returncode, False
     standeard_out = result.stdout.decode('utf-8').splitlines()
     mac_address_line = standeard_out[1].split()
     mac_address = mac_address_line[1]
-    print(f'using mac_address={mac_address}')
+    log.log(f'using mac_address={mac_address}')
     return result.returncode, mac_address
 
 
@@ -278,12 +279,12 @@ def run():
     log.log('args = {}'.format(debug_level))
 
     if not os.path.exists('font5x8.bin'):
-        print('the file font5x8.bin is not present in the current directory.')
-        print('use the command wget -O font5x8.bin \
+        log.log('the file font5x8.bin is not present in the current directory.')
+        log.log('use the command wget -O font5x8.bin \
                 https://github.com/adafruit/Adafruit_CircuitPython_framebuf/blob/master/examples/font5x8.bin?raw=true to download')
         exit(-1)
     if not os.path.exists(args.call_sign):
-        print('the file {} is not present'.format(args.call_sign))
+        log.log('the file {} is not present'.format(args.call_sign))
         exit(-1)
     if args.mac_address:
         mac_address = args.mac_address
