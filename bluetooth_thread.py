@@ -15,8 +15,6 @@
 ##############################################################################################################
 
 import threading
-import os
-import stat
 import time
 import socket
 import radio_constants

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ####################################################################################################################################
-# Copyright 2020 Ralph Carl Blach III
+# Copyright 2020, 2023 Ralph Carl Blach III
 # Other copyright by Brent Rubel for Adafruit industries.
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"),
 # to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute,
