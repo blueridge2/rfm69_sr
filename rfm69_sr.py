@@ -232,6 +232,7 @@ def check_file(filename, length):
     :param length the number of characters to read
     :return:
     """
+    log = logging.log()
     try:
         file_handle = open(filename, "rb")
     except Exception as error:
