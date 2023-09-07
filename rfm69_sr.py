@@ -219,7 +219,7 @@ class ReceiveRFM69Data(threading.Thread):
                 # longitude has the form Longitude (DDDmm.mm)
                 ack_data = bytes('a', 'utf-8')
                 # create of tuple of to, from, id, status,
-                ack_tuple = (header[1], header[0], header[2], 0x80)
+                # ack_tuple = (header[1], header[0], header[2], 0x80)
                 rfm69.send(ack_data, destination=header[1], node=header[0], identifier=header[2], flags=0x80)
             time.sleep(1)
 
@@ -294,7 +294,7 @@ def run():
         if got_mac:
             raise ValueError('Failed to get the mac address from the device')
 
-    callsign_network = check_file(args.call_sign, radio_constants.CALLSIGN_LENGTH)
+    # callsign_network = check_file(args.call_sign, radio_constants.CALLSIGN_LENGTH)
     network = args.sync_word.to_bytes(length=2, byteorder='big')
 
     dictionary_args = {'MacAddress': mac_address, 'TimeOut': 30, 'RfcommPort': args.rfcomm_port}

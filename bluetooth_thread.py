@@ -52,7 +52,7 @@ class BluetoothTransmitThread(threading.Thread):
         self.port = self.kwargs.get('RfcommPort', 4)
         self.log = args[3]
 
-    def bluetooth_connect(self, mac_address, bluetooth_port:int = 4, timeout: int = 30):
+    def bluetooth_connect(self, mac_address, bluetooth_port: int = 4, timeout: int = 30):
         """
         connect to blue tooth client
 

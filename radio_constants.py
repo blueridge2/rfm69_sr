@@ -22,5 +22,3 @@ LONGITUDE: Final[int] = 4
 LONGITUDE_EW: Final[int] = 5
 BLUETOOTH_MAC_LENGTH: Final[int] = 17
 CALLSIGN_LENGTH: Final[int] = 8     # 6 CHARACTERS + 2 FOR NETWORK
-
-

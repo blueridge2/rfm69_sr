@@ -38,5 +38,3 @@ class Logging(object):
         string_time = current_time.strftime("%y:%b:%H:%M:%S")
         print(string_time + " " + data)
         self.__lock.release()
-
-
