@@ -40,6 +40,7 @@ import argparse
 import os
 import time
 import threading
+import re
 # Import Blinka Libraries
 # import the SSD1306 module.
 import adafruit_ssd1306
@@ -249,12 +250,12 @@ def get_local_bluetooth_mac_address():
     """
     log = logging.Logging()
     result = subprocess.run(['hcitool', 'dev'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    log.log(f'result.returncode={result.returncode}')
+    log.log(f'result return code={result.returncode}')
     if result.returncode:
         log.log(f'{result.args} command did not execute successfully')
         return result.returncode, False
-    standeard_out = result.stdout.decode('utf-8').splitlines()
-    mac_address_line = standeard_out[1].split()
+    standard_out = result.stdout.decode('utf-8').splitlines()
+    mac_address_line = standard_out[1].split()
     mac_address = mac_address_line[1]
     log.log(f'using mac_address={mac_address}')
     return result.returncode, mac_address
@@ -288,12 +289,18 @@ def run():
         log.log('the file {} is not present'.format(args.call_sign))
         exit(-1)
     if args.mac_address:
-        mac_address = args.mac_address
+        mac_address = args.mac_address.upper()
+        log.log(f"mac address = {mac_address}")
+        mac_reg_expression = r'[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}'
+        re_match = re.match( mac_reg_expression, mac_address)
+        if re_match is None:
+            raise ValueError('The bluetooth Mac address did not match the form xx:xx:xx:xx')
+        mac_address = re_match.group()
     else:
         got_mac, mac_address = get_local_bluetooth_mac_address()
         if got_mac:
             raise ValueError('Failed to get the mac address from the device')
-
+    log.log(f'bluetooth mac address = {mac_address}')
     # callsign_network = check_file(args.call_sign, radio_constants.CALLSIGN_LENGTH)
     network = args.sync_word.to_bytes(length=2, byteorder='big')
 

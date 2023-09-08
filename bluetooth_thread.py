@@ -63,20 +63,22 @@ class BluetoothTransmitThread(threading.Thread):
                 note the client socket is used to write
         """
 
-        print(f'bluetooth_port = {bluetooth_port}, mac_address = {mac_address}')
+        self.log(f'bluetooth_port = {bluetooth_port}, mac_address = {mac_address}, len={len(mac_address)}')
         backlog = 1
         # size = 1024
         #
         local_socket = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
-        print(f'local_socket={local_socket}  mac address = {mac_address}')
+        self.log(f'local_socket={local_socket}  mac address = {mac_address}, type ={type(mac_address)}')
         try:
             local_socket.bind((mac_address, bluetooth_port))
         except Exception as error:
             local_socket.close()
+            if str(error) == 'bad bluetooth address':
+                raise ValueError('the bluetooth bind failed because of a bad bluetooth address')
             self.log(f'bluetooth bind socket failed error = {error}')
             return False, False, False
         else:
-            print("bind worked ok")
+            self.log("bind worked ok")
         local_socket.listen(backlog)
         local_socket.settimeout(timeout)
         try:
