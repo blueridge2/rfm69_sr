@@ -117,7 +117,7 @@ class BluetoothTransmitThread(threading.Thread):
         minutes_sign = u"\u0027"
 
         # short circuit will prevent the exception in the second half
-        if packet_list is None or packet_list[radio_constants.VALID] != 'A':
+        if packet_list is None or packet_list[radio_constants.VALID] == '0':
             lat_long = 'No valid location'
         else:
             # latitude has the form of Latitude (DDmm.mm)

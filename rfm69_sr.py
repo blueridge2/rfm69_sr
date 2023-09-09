@@ -116,7 +116,7 @@ class DisplayLocation(threading.Thread):
                 continue
             else:
                 callsign = packet_list[radio_constants.CALLSIGN]
-                if packet_list[radio_constants.VALID] != 'A':
+                if packet_list[radio_constants.VALID] == '0':
                     # the packet does not have a valid gps location
                     display.text('not valid {}'.format(callsign), 0, 8, 1)
                     display.show()
@@ -212,7 +212,7 @@ class ReceiveRFM69Data(threading.Thread):
                 self.log(f'packet.txt={packet_text}')
                 packet_list = packet_text.split(',')
                 self.lock_location_class.data = packet_list
-                if packet_list[radio_constants.VALID] != 'A':
+                if packet_list[radio_constants.VALID] == '0':
                     # the packet does not have a valid gps location
                     self.lock_location_class.data = 'not valid'
                     time.sleep(1)
@@ -221,6 +221,7 @@ class ReceiveRFM69Data(threading.Thread):
                 ack_data = bytes('a', 'utf-8')
                 # create of tuple of to, from, id, status,
                 # ack_tuple = (header[1], header[0], header[2], 0x80)
+                self.log('got a valie packet send ack')
                 rfm69.send(ack_data, destination=header[1], node=header[0], identifier=header[2], flags=0x80)
             time.sleep(1)
 
