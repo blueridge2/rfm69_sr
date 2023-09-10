@@ -325,6 +325,7 @@ def run():
 
     # create and run the threads
     radio_args = (gps_lock_and_location, event, network, log.log)
+    # the * in front of the radio_args expands the list into arguments
     run_radio = ReceiveRFM69Data('rfm_radio', *radio_args)
     run_display = DisplayLocation('display data', *radio_args, log.log)
 
