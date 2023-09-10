@@ -23,6 +23,7 @@ import radio_constants
 class BluetoothTransmitThread(threading.Thread):
     """
     this is a thread class for the bluetooth radio
+    When establishing a bluetooth socket, one uses the local bluetooth mac address
     """
     __slots__ = ['args', 'kwargs', 'lock_location_class', 'event', 'mac_address', 'timeout']
 
@@ -81,12 +82,15 @@ class BluetoothTransmitThread(threading.Thread):
             self.log("bind worked ok")
         local_socket.listen(backlog)
         local_socket.settimeout(timeout)
+
         try:
             client_socket, address = local_socket.accept()
         except Exception as error:
             self.log(f'bluetooth accept failed error = {error}')
             return False, False, False
-        self.log('bluetooth accept passed')
+        self.log(f'bluetooth accept passed client_socket = {client_socket}, address = {address}')
+        # the client socket is the socket to which the writes/reads will go
+        # the address the remote bluetooth mac address and the rfcomm port
         return local_socket, client_socket, address
 
     @staticmethod
@@ -117,7 +121,7 @@ class BluetoothTransmitThread(threading.Thread):
         minutes_sign = u"\u0027"
 
         # short circuit will prevent the exception in the second half
-        if packet_list is None or packet_list[radio_constants.VALID] == '0':
+        if packet_list is None or packet_list[radio_constants.POSITION_FIX_INDICATOR] == '0':
             lat_long = 'No valid location'
         else:
             # latitude has the form of Latitude (DDmm.mm)
@@ -126,13 +130,14 @@ class BluetoothTransmitThread(threading.Thread):
             north_south = '' if packet_list[radio_constants.LATITUDE_NS] == 'N' else '-'
             latitude = 'lat = ' + north_south + lat_degrees + degree_sign_utf8 + lat_minutes_seconds + minutes_sign
 
-            # longitude has teh form Longitude (DDDmm.mm)
+            # longitude has the form Longitude (DDDmm.mm)
             long_degrees = packet_list[radio_constants.LONGITUDE][:3]
             long_minutes_seconds = packet_list[radio_constants.LONGITUDE][3:]
 
             east_west = '' if packet_list[radio_constants.LONGITUDE_EW] == 'E' else '-'
-            longitude = 'log = ' + east_west + long_degrees + degree_sign_utf8 + long_minutes_seconds + minutes_sign
-            lat_long = longitude + latitude + ' ' + '{}'.format(counter)
+            longitude = 'lng = ' + east_west + long_degrees + degree_sign_utf8 + long_minutes_seconds + minutes_sign
+            # send the position fix indicator
+            lat_long = longitude + latitude + '{}'.format(' ') + packet_list[radio_constants.POSITION_FIX_INDICATOR] + ' {}'.format(counter)
         return lat_long
 
     def run(self):
@@ -157,7 +162,7 @@ class BluetoothTransmitThread(threading.Thread):
                 packet_list = self.lock_location_class.data
                 lat_long = self.process_packet(packet_list, counter)
                 counter = counter + 1 if counter < 16 else 0
-                lat_long = lat_long + "counter" + "\r\n"
+                lat_long = lat_long + "\r\n"
 
                 return_code = self.send_data(bluetooth_write_socket, lat_long)
                 if not return_code:

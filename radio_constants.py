@@ -15,7 +15,7 @@
 #######################################################################################################################################
 from typing import Final
 CALLSIGN: Final[int] = 0
-VALID: Final[int] = 1
+POSITION_FIX_INDICATOR: Final[int] = 1
 LATITUDE: Final[int] = 2
 LATITUDE_NS: Final[int] = 3
 LONGITUDE: Final[int] = 4
