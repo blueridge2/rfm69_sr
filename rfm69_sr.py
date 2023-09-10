@@ -169,7 +169,7 @@ class ReceiveRFM69Data(threading.Thread):
 
         :param name: name the name of the thread
         :param location_data: the class that contains the gps location
-        :param args: the tuple containing the gps lock and data
+        :param args: the tuple containing the gps lock and data,
         :param kwargs: not used at this time
 
         """
