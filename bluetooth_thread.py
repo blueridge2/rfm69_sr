@@ -117,27 +117,18 @@ class BluetoothTransmitThread(threading.Thread):
         :param counter a counter ot show movement on phone
         :return: a string with the packet in it
         """
-        degree_sign_utf8 = u"\u00b0"
-        minutes_sign = u"\u0027"
-
         # short circuit will prevent the exception in the second half
         if packet_list is None or packet_list[radio_constants.POSITION_FIX_INDICATOR] == '0':
             lat_long = 'No valid location'
         else:
             # latitude has the form of Latitude (DDmm.mm)
-            lat_degrees = packet_list[radio_constants.LATITUDE][:2]
-            lat_minutes_seconds = packet_list[radio_constants.LATITUDE][2:]
-            north_south = '' if packet_list[radio_constants.LATITUDE_NS] == 'N' else '-'
-            latitude = 'lat = ' + north_south + lat_degrees + degree_sign_utf8 + lat_minutes_seconds + minutes_sign
+            latitude = packet_list[radio_constants.LATITUDE]
 
             # longitude has the form Longitude (DDDmm.mm)
-            long_degrees = packet_list[radio_constants.LONGITUDE][:3]
-            long_minutes_seconds = packet_list[radio_constants.LONGITUDE][3:]
+            longitude = packet_list[radio_constants.LONGITUDE]
 
-            east_west = '' if packet_list[radio_constants.LONGITUDE_EW] == 'E' else '-'
-            longitude = 'lng = ' + east_west + long_degrees + degree_sign_utf8 + long_minutes_seconds + minutes_sign
             # send the position fix indicator
-            lat_long = longitude + latitude + '{}'.format(' ') + packet_list[radio_constants.POSITION_FIX_INDICATOR] + ' {}'.format(counter)
+            lat_long = longitude + ', ' + latitude + '{}'.format(' ') + packet_list[radio_constants.POSITION_FIX_INDICATOR] + ' {}'.format(counter)
         return lat_long
 
     def run(self):
@@ -169,3 +160,4 @@ class BluetoothTransmitThread(threading.Thread):
                     connected = False
                     bluetooth_write_socket.close()
                     local_socket.close()
+

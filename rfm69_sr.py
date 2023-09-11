@@ -144,6 +144,9 @@ class DisplayLocation(threading.Thread):
 
             east_west = '' if packet_list[radio_constants.LONGITUDE_EW] == 'E' else '-'
             longitude = 'log = ' + east_west + long_degrees + degree_sign_bonnet + long_minutes_seconds + minutes_sign
+            # print(f'lat mint/seconds = {lat_minutes_seconds}')
+            # print(f'{north_south + str(float(lat_degrees) +  float(lat_minutes_seconds)/60)},  '
+            #       f'{east_west + str(float(long_degrees) + float(long_minutes_seconds)/60)}')
             # longitude_to_bluetooth = east_west + long_degrees + degree_sign_utf8 + long_minutes_seconds + minutes_sign
             display.text(latitude, 0, 8, 1)
             display.text(longitude, 0, 16, 1)
@@ -218,10 +221,31 @@ class ReceiveRFM69Data(threading.Thread):
                 # send the data to data class
                 header = packet[0:4]
                 processed_packet = packet[4:]
+
                 packet_text = str(processed_packet, "utf-8")
-                self.log(f'packet.txt={packet_text}')
+                # self.log(f'packet.txt={packet_text}')
                 packet_list = packet_text.split(',')
                 self.log(f'packet_list={packet_list}')
+
+                # from nemas to hours minutes for latitude and longitude
+                latitude_unprocessed = packet_list[radio_constants.LATITUDE]
+                longitude_unprocessed = packet_list[radio_constants.LONGITUDE]
+                lat_degrees = latitude_unprocessed[:2]
+                lat_ms = latitude_unprocessed[2:]
+                latitude = '{:2.7f}'.format((float(lat_degrees) + float(lat_ms) / 60)).zfill(9)
+
+                long_degrees = longitude_unprocessed[:3]
+                long_ms = longitude_unprocessed[3:]
+                longitude = "{:3.7f}".format(float(long_degrees) + float(long_ms) / 60).zfill(10)
+
+                north_south = '' if packet_list[radio_constants.LATITUDE_NS] == 'N' else '-'
+                east_west = '' if packet_list[radio_constants.LONGITUDE_EW] == 'E' else '-'
+
+                self.log(f'{north_south}{latitude}, {east_west}{longitude} ')
+
+                packet_list[radio_constants.LATITUDE] = north_south + latitude
+                packet_list[radio_constants.LONGITUDE] = east_west + longitude
+
                 self.lock_location_class.data = packet_list
                 if packet_list[radio_constants.POSITION_FIX_INDICATOR] == '0':
                     # the packet does not have a valid gps location
