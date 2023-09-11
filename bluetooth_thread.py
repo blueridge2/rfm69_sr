@@ -32,9 +32,8 @@ class BluetoothTransmitThread(threading.Thread):
         this is the init class for the thread
 
         :param name: The name of the thread
-        :param args: The args, it must be a tuple consisting go the lock variable, the shared data, must be a list
-                     the second arg is the event so cause a shutdown if button a is pushed
-                     the thrid argument is the reference to the log function
+        :param args: The args, it must be a tuple consisting of
+                                (gps_lock_and_location, event, network, log.log, args.sleep_time)
         :param kwargs: a dictionary that must contain the mac address and the timeout
                         example {'mac_address': xx:xx:xx:xx:xx, 'timeout':10}  the timeout is optional but the mac address is not
         """
@@ -46,12 +45,14 @@ class BluetoothTransmitThread(threading.Thread):
         self.args = args
         self.kwargs = kwargs
         self.lock_location_class = self.args[0]
-        self.name = name
         self.event = self.args[1]
+        self.network = self.args[2]
+        self.log = self.args[3]
+        self.sleep_time_in_sec = self.args[4]
+        self.name = name
         self.mac_address = self.kwargs['MacAddress']
         self.timeout = self.kwargs.get('TimeOut', 30)
         self.port = self.kwargs.get('RfcommPort', 4)
-        self.log = args[3]
 
     def bluetooth_connect(self, mac_address, bluetooth_port: int = 4, timeout: int = 30):
         """
@@ -160,4 +161,7 @@ class BluetoothTransmitThread(threading.Thread):
                     connected = False
                     bluetooth_write_socket.close()
                     local_socket.close()
+                    continue
+            # only delay if we are connected
+            time.sleep(self.sleep_time_in_sec)
 

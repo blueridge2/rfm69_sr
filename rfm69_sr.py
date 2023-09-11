@@ -80,8 +80,7 @@ class DisplayLocation(threading.Thread):
         this is the init class for the thread
 
         :param name: The name of the thread
-        :param args: The args, it must be a tuple consisting go the lock variable, the shared data, must be a list
-                     the second arg is the event so cause a shutdown if button a is pushed
+        :param args: The args, gps_lock_and_location, event, network, log.log, args.sleep_time
         :param kwargs: Noe used
         """
         super(DisplayLocation, self).__init__(name=name, args=args)
@@ -93,9 +92,10 @@ class DisplayLocation(threading.Thread):
             raise ValueError()
         self.args = args
         self.lock_location_class = self.args[0]
-        self.name = name
         self.event = self.args[1]
-        self.log = self.args[2]
+        self.network = self.args[2]
+        self.log = self.args[3]
+        self.sleep_time_in_sec = self.args[4]
 
     def run(self):
         """
@@ -156,7 +156,7 @@ class DisplayLocation(threading.Thread):
             # test to see if is time to exit
             if self.event.is_set():
                 return
-            time.sleep(1)
+            time.sleep(self.sleep_time_in_sec)
 
 
 class ReceiveRFM69Data(threading.Thread):
@@ -172,7 +172,7 @@ class ReceiveRFM69Data(threading.Thread):
 
         :param name: name the name of the thread
         :param location_data: the class that contains the gps location
-        :param args: the tuple containing the gps lock and data,
+        :param args: the list containing the event, network, log_fnctin, and the sleep time
         :param kwargs: not used at this time
 
         """
@@ -186,6 +186,7 @@ class ReceiveRFM69Data(threading.Thread):
         self.event = self.args[1]
         self.network = self.args[2]
         self.log = self.args[3]
+        self.sleep_time_in_sec = self.args[4]
 
     def run(self):
         """
@@ -225,7 +226,7 @@ class ReceiveRFM69Data(threading.Thread):
                 packet_text = str(processed_packet, "utf-8")
                 # self.log(f'packet.txt={packet_text}')
                 packet_list = packet_text.split(',')
-                self.log(f'packet_list={packet_list}')
+                # self.log(f'packet_list={packet_list}')
 
                 # from nemas to hours minutes for latitude and longitude
                 latitude_unprocessed = packet_list[radio_constants.LATITUDE]
@@ -250,7 +251,7 @@ class ReceiveRFM69Data(threading.Thread):
                 if packet_list[radio_constants.POSITION_FIX_INDICATOR] == '0':
                     # the packet does not have a valid gps location
                     self.lock_location_class.data = 'not valid'
-                    time.sleep(1)
+                    time.sleep(self.sleep_time_in_sec)
                     continue
                 # longitude has the form Longitude (DDDmm.mm)
                 ack_data = bytes('a', 'utf-8')
@@ -258,7 +259,7 @@ class ReceiveRFM69Data(threading.Thread):
                 # ack_tuple = (header[1], header[0], header[2], 0x80)
                 self.log('got a valid packet send ack')
                 rfm69.send(ack_data, destination=header[1], node=header[0], identifier=header[2], flags=0x80)
-            time.sleep(1)
+            time.sleep(self.sleep_time_in_sec)
 
 
 def check_file(filename, length):
@@ -310,6 +311,7 @@ def run():
     parser.add_argument('--sync_word', type=int, default=0x2dd4, help='Binary file that contains the network default:  %(default)s)')
     parser.add_argument('--mac_address', type=str, default=None, help='Siring that has the Mac address fo the bluetooth device,:  %(default)s)')
     parser.add_argument('--rfcomm_port', type=int, default=4, help='The rfcomm port:  %(default)s)')
+    parser.add_argument('--sleep_time', type=int, default=1, help='The default sleep time in the radio loop  %(default)s)')
     args = parser.parse_args()
     debug_level = args.level
     # log_file = args.log_fn
@@ -348,12 +350,12 @@ def run():
     gps_lock_and_location = lock_and_data.LockAndData()
 
     # create and run the threads
-    radio_args = (gps_lock_and_location, event, network, log.log)
+    radio_args = (gps_lock_and_location, event, network, log.log, args.sleep_time)
     # the * in front of the radio_args expands the list into arguments
     run_radio = ReceiveRFM69Data('rfm_radio', *radio_args)
-    run_display = DisplayLocation('display data', *radio_args, log.log)
+    run_display = DisplayLocation('display data', *radio_args)
 
-    bluetooth_args = (gps_lock_and_location, event, dictionary_args, log.log)
+    bluetooth_args = (gps_lock_and_location, event, network, log.log, args.sleep_time)
     connect_bluetooth = bluetooth_thread.BluetoothTransmitThread('Bluetooth connection', *bluetooth_args, **dictionary_args)
 
     run_radio.start()
