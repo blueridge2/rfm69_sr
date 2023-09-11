@@ -64,6 +64,7 @@ from digitalio import Pull
 import lock_and_data
 import logging
 import bluetooth_thread
+import position_logging
 import radio_constants
 import subprocess
 
@@ -133,24 +134,12 @@ class DisplayLocation(threading.Thread):
                     continue
 
             # latitude has the form of Latitude (DDmm.mm)
-            lat_degrees = packet_list[radio_constants.LATITUDE][:2]
-            lat_minutes_seconds = packet_list[radio_constants.LATITUDE][2:]
-            north_south = '' if packet_list[radio_constants.LATITUDE_NS] == 'N' else '-'
-            latitude = 'lat = ' + north_south + lat_degrees + degree_sign_bonnet + lat_minutes_seconds + minutes_sign
-            # latitude_to_bluetooth = north_south + lat_degrees + degree_sign_utf8 + lat_minutes_seconds + minutes_sign
-            # longitude has the form Longitude (DDDmm.mm)
-            long_degrees = packet_list[radio_constants.LONGITUDE][:3]
-            long_minutes_seconds = packet_list[radio_constants.LONGITUDE][3:]
+            latitude = packet_list[radio_constants.LATITUDE]
+            longitude = packet_list[radio_constants.LONGITUDE]
 
-            east_west = '' if packet_list[radio_constants.LONGITUDE_EW] == 'E' else '-'
-            longitude = 'log = ' + east_west + long_degrees + degree_sign_bonnet + long_minutes_seconds + minutes_sign
-            # print(f'lat mint/seconds = {lat_minutes_seconds}')
-            # print(f'{north_south + str(float(lat_degrees) +  float(lat_minutes_seconds)/60)},  '
-            #       f'{east_west + str(float(long_degrees) + float(long_minutes_seconds)/60)}')
-            # longitude_to_bluetooth = east_west + long_degrees + degree_sign_utf8 + long_minutes_seconds + minutes_sign
             display.text(latitude, 0, 8, 1)
             display.text(longitude, 0, 16, 1)
-            display.text('vld={}, {} {:01x}'.format(packet_list[radio_constants.POSITION_FIX_INDICATOR], callsign, counter & 0xf), 0, 24, 1)
+            display.text('pfi={}, {} {:01x}'.format(packet_list[radio_constants.POSITION_FIX_INDICATOR], callsign, counter & 0xf), 0, 24, 1)
             display.show()
             counter = counter + 1 if counter < 16 else 0
             # test to see if is time to exit
@@ -357,14 +346,17 @@ def run():
 
     bluetooth_args = (gps_lock_and_location, event, network, log.log, args.sleep_time)
     connect_bluetooth = bluetooth_thread.BluetoothTransmitThread('Bluetooth connection', *bluetooth_args, **dictionary_args)
+    logging_thread = position_logging.BluetoothTransmitThread('logging thread',*radio_args, 'test;txt')
 
     run_radio.start()
     run_display.start()
     connect_bluetooth.start()
+    logging_thread.start()
 
     connect_bluetooth.join()
     run_radio.join()
     run_display.join()
+    logging_thread.join()
 
 
 if __name__ == "__main__":
