@@ -119,7 +119,7 @@ class DisplayLocation(threading.Thread):
             display.show()
 
             packet_list = self.lock_location_class.data
-
+            self.log(f'doisplay={[packet_list]}')
             if packet_list is None:
                 display.text('not valid {}'.format('no packet'), 0, 8, 1)
                 display.show()
@@ -127,7 +127,7 @@ class DisplayLocation(threading.Thread):
                 continue
             else:
                 callsign = packet_list[radio_constants.CALLSIGN]
-                if packet_list[radio_constants.POSITION_FIX_INDICATOR] == '0':
+                if packet_list[radio_constants.POSITION_VALID] == 'V':
                     # the packet does not have a valid gps location
                     display.text('not valid {}'.format(callsign), 0, 8, 1)
                     display.show()
@@ -136,10 +136,11 @@ class DisplayLocation(threading.Thread):
             # latitude has the form of Latitude (DDmm.mm)
             latitude = packet_list[radio_constants.LATITUDE]
             longitude = packet_list[radio_constants.LONGITUDE]
+            self.log(f'display = latidute={latitude}, {longitude}')
 
             display.text(latitude, 0, 8, 1)
             display.text(longitude, 0, 16, 1)
-            display.text('pfi={}, {} {:01x}'.format(packet_list[radio_constants.POSITION_FIX_INDICATOR], callsign, counter & 0xf), 0, 24, 1)
+            display.text('pfi={}, {} {:01x}'.format(packet_list[radio_constants.POSITION_VALID], callsign, counter & 0xf), 0, 24, 1)
             display.show()
             counter = counter + 1 if counter < 16 else 0
             # test to see if is time to exit
@@ -215,7 +216,7 @@ class ReceiveRFM69Data(threading.Thread):
                 packet_text = str(processed_packet, "utf-8")
                 # self.log(f'packet.txt={packet_text}')
                 packet_list = packet_text.split(',')
-                # self.log(f'packet_list={packet_list}')
+                self.log(f'packet_list={packet_list}')
 
                 # from nemas to hours minutes for latitude and longitude
                 latitude_unprocessed = packet_list[radio_constants.LATITUDE]
@@ -235,9 +236,10 @@ class ReceiveRFM69Data(threading.Thread):
 
                 packet_list[radio_constants.LATITUDE] = north_south + latitude
                 packet_list[radio_constants.LONGITUDE] = east_west + longitude
+                self.log(f'radio long={packet_list[radio_constants.LATITUDE]}, {packet_list[radio_constants.LONGITUDE]}')
 
                 self.lock_location_class.data = packet_list
-                if packet_list[radio_constants.POSITION_FIX_INDICATOR] == '0':
+                if packet_list[radio_constants.POSITION_VALID] == 'V':
                     # the packet does not have a valid gps location
                     self.lock_location_class.data = 'not valid'
                     time.sleep(self.sleep_time_in_sec)
@@ -295,7 +297,7 @@ def run():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--level', choices=['info', 'debug'], default='debug', help='The debug log level (default: %(default)s)')
-    parser.add_argument('--log_fn', type=str, default='/tmp/rfm_radio', help='Default log file name - (default: %(default)s)')
+    parser.add_argument('--log_fn', type=str, default='/tmp/rfm_radio.log', help='Default log file name - (default: %(default)s)')
     parser.add_argument('--call_sign', type=str, default='./call_sign', help='Binary file that contains the call sign:  %(default)s)')
     parser.add_argument('--sync_word', type=int, default=0x2dd4, help='Binary file that contains the network default:  %(default)s)')
     parser.add_argument('--mac_address', type=str, default=None, help='Siring that has the Mac address fo the bluetooth device,:  %(default)s)')
@@ -346,7 +348,10 @@ def run():
 
     bluetooth_args = (gps_lock_and_location, event, network, log.log, args.sleep_time)
     connect_bluetooth = bluetooth_thread.BluetoothTransmitThread('Bluetooth connection', *bluetooth_args, **dictionary_args)
-    logging_thread = position_logging.BluetoothTransmitThread('logging thread',*radio_args, 'test;txt')
+    logging_args = radio_args
+    logging_args = list(logging_args)
+    logging_args.append(args.log_fn)
+    logging_thread = position_logging.LoggingThread('logging thread', *logging_args)
 
     run_radio.start()
     run_display.start()

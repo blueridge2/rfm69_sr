@@ -18,7 +18,7 @@ import socket
 import radio_constants
 
 
-class BluetoothTransmitThread(threading.Thread):
+class LoggingThread(threading.Thread):
     """
     this is a thread class for the bluetooth radio
     When establishing a bluetooth socket, one uses the local bluetooth mac address
@@ -35,7 +35,7 @@ class BluetoothTransmitThread(threading.Thread):
         :param kwargs: a dictionary that must contain the mac address and the timeout
                         example {'mac_address': xx:xx:xx:xx:xx, 'timeout':10}  the timeout is optional but the mac address is not
         """
-        super(BluetoothTransmitThread, self).__init__(name=name, args=args, kwargs=kwargs)
+        super(LoggingThread, self).__init__(name=name, args=args, kwargs=kwargs)
 
         if args is None:
             raise ValueError('Args cannot be None')
@@ -47,11 +47,10 @@ class BluetoothTransmitThread(threading.Thread):
         self.network = self.args[2]
         self.log = self.args[3]
         self.sleep_time_in_sec = self.args[4]
+        self.log_file_name = self.args[5]
         self.name = name
         # truncate the log file to zero length
-        log_file_object = open("romeo.txt", "a")
-        log_file_object.truncate()
-        log_file_object.close()
+
 
     def run(self):
         """
@@ -59,7 +58,10 @@ class BluetoothTransmitThread(threading.Thread):
 
         :return:
         """
-        connected = False
+        log_file_object = open(self.log_file_name, "w+")
+        log_file_object.truncate()
+        log_file_object.close()
+        self.log(f'logging thread {self.args}')
         counter = 0
         previous_lat_long = ""
         while True:
@@ -70,20 +72,20 @@ class BluetoothTransmitThread(threading.Thread):
             if not packet_list:
                 continue
             callsign = packet_list[radio_constants.CALLSIGN]
-            if packet_list[radio_constants.POSITION_FIX_INDICATOR] == '0':
+            if packet_list[radio_constants.POSITION_VALID] == 'V':
                 # the packet does not have a valid gps location
-                self.log('Position indicator ={}'.format(packet_list[radio_constants.POSITION_FIX_INDICATOR]))
+                self.log('Position indicator ={}'.format(packet_list[radio_constants.POSITION_VALID]))
                 continue
 
             # latitude has the form of Latitude (DDmm.mm)
             latitude = packet_list[radio_constants.LATITUDE]
             longitude = packet_list[radio_constants.LONGITUDE]
-            lat_long = longitude + latitude
+            lat_long = longitude +" " + latitude + '\n'
             if lat_long != previous_lat_long:
                 self.log(f'{self.name} {latitude}, {longitude} {counter}\r\n')
                 previous_lat_long = lat_long
                 counter += 1
-                with open("romeo.txt", "+a") as file:
+                with open(self.log_file_name, "a") as file:
                     file.write(lat_long)
 
             time.sleep(self.sleep_time_in_sec)

@@ -15,10 +15,12 @@
 #######################################################################################################################################
 from typing import Final
 CALLSIGN: Final[int] = 0
-POSITION_FIX_INDICATOR: Final[int] = 1
-LATITUDE: Final[int] = 2
-LATITUDE_NS: Final[int] = 3
-LONGITUDE: Final[int] = 4
-LONGITUDE_EW: Final[int] = 5
+TIME_OF_FIX: Final[int] = 1
+POSITION_VALID: Final[int] = 2
+LATITUDE: Final[int] = 3
+LATITUDE_NS: Final[int] = 4
+LONGITUDE: Final[int] = 5
+LONGITUDE_EW: Final[int] = 6
+FIX_DATE: Final[int] = 7
 BLUETOOTH_MAC_LENGTH: Final[int] = 17
 CALLSIGN_LENGTH: Final[int] = 8     # 6 CHARACTERS + 2 FOR NETWORK
