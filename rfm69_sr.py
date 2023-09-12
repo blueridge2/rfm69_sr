@@ -119,7 +119,7 @@ class DisplayLocation(threading.Thread):
             display.show()
 
             packet_list = self.lock_location_class.data
-            self.log(f'doisplay={[packet_list]}')
+
             if packet_list is None:
                 display.text('not valid {}'.format('no packet'), 0, 8, 1)
                 display.show()
@@ -127,7 +127,8 @@ class DisplayLocation(threading.Thread):
                 continue
             else:
                 callsign = packet_list[radio_constants.CALLSIGN]
-                if packet_list[radio_constants.POSITION_VALID] == 'V':
+                # test to see if the position is valid
+                if packet_list[radio_constants.POSITION_VALID] == radio_constants.POSITION_NOT_VALID_VALUE:
                     # the packet does not have a valid gps location
                     display.text('not valid {}'.format(callsign), 0, 8, 1)
                     display.show()
@@ -136,11 +137,10 @@ class DisplayLocation(threading.Thread):
             # latitude has the form of Latitude (DDmm.mm)
             latitude = packet_list[radio_constants.LATITUDE]
             longitude = packet_list[radio_constants.LONGITUDE]
-            self.log(f'display = latidute={latitude}, {longitude}')
 
             display.text(latitude, 0, 8, 1)
             display.text(longitude, 0, 16, 1)
-            display.text('pfi={}, {} {:01x}'.format(packet_list[radio_constants.POSITION_VALID], callsign, counter & 0xf), 0, 24, 1)
+            display.text('pv={}, {} {:01x}'.format(packet_list[radio_constants.POSITION_VALID], callsign, counter & 0xf), 0, 24, 1)
             display.show()
             counter = counter + 1 if counter < 16 else 0
             # test to see if is time to exit
@@ -216,7 +216,7 @@ class ReceiveRFM69Data(threading.Thread):
                 packet_text = str(processed_packet, "utf-8")
                 # self.log(f'packet.txt={packet_text}')
                 packet_list = packet_text.split(',')
-                self.log(f'packet_list={packet_list}')
+                # self.log(f'packet_list={packet_list}')
 
                 # from nemas to hours minutes for latitude and longitude
                 latitude_unprocessed = packet_list[radio_constants.LATITUDE]
@@ -232,14 +232,15 @@ class ReceiveRFM69Data(threading.Thread):
                 north_south = '' if packet_list[radio_constants.LATITUDE_NS] == 'N' else '-'
                 east_west = '' if packet_list[radio_constants.LONGITUDE_EW] == 'E' else '-'
 
-                self.log(f'{north_south}{latitude}, {east_west}{longitude} ')
+                self.log(f'thread_name={self.name}, position = {north_south}{latitude}, {east_west}{longitude} ')
 
                 packet_list[radio_constants.LATITUDE] = north_south + latitude
                 packet_list[radio_constants.LONGITUDE] = east_west + longitude
-                self.log(f'radio long={packet_list[radio_constants.LATITUDE]}, {packet_list[radio_constants.LONGITUDE]}')
+                # self.log(f'radio long={packet_list[radio_constants.LATITUDE]}, {packet_list[radio_constants.LONGITUDE]}')
 
                 self.lock_location_class.data = packet_list
-                if packet_list[radio_constants.POSITION_VALID] == 'V':
+                # see if the positon is not valid
+                if packet_list[radio_constants.POSITION_VALID] == radio_constants.POSITION_NOT_VALID_VALUE:
                     # the packet does not have a valid gps location
                     self.lock_location_class.data = 'not valid'
                     time.sleep(self.sleep_time_in_sec)

@@ -119,7 +119,8 @@ class BluetoothTransmitThread(threading.Thread):
         :return: a string with the packet in it
         """
         # short circuit will prevent the exception in the second half
-        if packet_list is None or packet_list[radio_constants.POSITION_FIX_INDICATOR] == '0':
+        # see if the positon is not valid
+        if packet_list is None or packet_list[radio_constants.POSITION_VALID] == radio_constants.POSITION_NOT_VALID_VALUE:
             lat_long = 'No valid location'
         else:
             # latitude has the form of Latitude (DDmm.mm)
@@ -129,7 +130,7 @@ class BluetoothTransmitThread(threading.Thread):
             longitude = packet_list[radio_constants.LONGITUDE]
 
             # send the position fix indicator
-            lat_long = longitude + ', ' + latitude + '{}'.format(' ') + packet_list[radio_constants.POSITION_FIX_INDICATOR] + ' {}'.format(counter)
+            lat_long = longitude + ', ' + latitude + '{}'.format(' ') + packet_list[radio_constants.POSITION_VALID] + ' {}'.format(counter)
         return lat_long
 
     def run(self):

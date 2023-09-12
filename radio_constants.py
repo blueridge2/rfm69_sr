@@ -23,4 +23,6 @@ LONGITUDE: Final[int] = 5
 LONGITUDE_EW: Final[int] = 6
 FIX_DATE: Final[int] = 7
 BLUETOOTH_MAC_LENGTH: Final[int] = 17
+POSITION_VALID_VALUE: Final[chr] = 'A'
+POSITION_NOT_VALID_VALUE: Final[chr] = 'V'
 CALLSIGN_LENGTH: Final[int] = 8     # 6 CHARACTERS + 2 FOR NETWORK
