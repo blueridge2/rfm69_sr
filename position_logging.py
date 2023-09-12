@@ -80,13 +80,16 @@ class LoggingThread(threading.Thread):
             # latitude has the form of Latitude (DDmm.mm)
             latitude = packet_list[radio_constants.LATITUDE]
             longitude = packet_list[radio_constants.LONGITUDE]
-            lat_long = longitude +" " + latitude + '\n'
+            lat_long = longitude + " " + latitude + '\n'
             if lat_long != previous_lat_long:
                 self.log(f'{self.name} {latitude}, {longitude} {counter}\r\n')
                 previous_lat_long = lat_long
                 counter += 1
                 with open(self.log_file_name, "a") as file:
-                    file.write(lat_long)
+                    complete_log_string = packet_list[radio_constants.TIME_OF_FIX] + ' ' + \
+                                          packet_list[radio_constants.FIX_DATE] + ' ' + lat_long
+                    self.log(f'thread_name = {self.name} {complete_log_string}')
+                    file.write(complete_log_string)
 
             time.sleep(self.sleep_time_in_sec)
 

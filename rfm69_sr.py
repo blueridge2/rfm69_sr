@@ -32,18 +32,16 @@
 # byte 2 not used by this program( a counter set by the sender/transmitter)
 # byte 3 status 0 = Data 0x80 is an ack
 
-
-# valid packet minus the 4 byte header will look like ['kf4wbk', '2', '4009.6037', 'N', '10503.7000', 'W']
+#                                                                   utc time   val  latitude   n/s    longitude    e/w  date
+# valid packet minus the 4 byte header will look like ['KF4WBK', '171207.000', 'A', '3557.3377', 'N', '07901.1607', 'W', '120923']
 # an invalid packet minus the 4 byte header will look like ['kf4wbk', 'V']
 # the program depends on GGA nema sentence position fix indicator from the GGA sentence
-# Position Fix Indicator table
+# VALID NOT VALID
 #        | Value | Description |
 #        |:------:|:---------------------------------------------:|
-#        | 0 | Fix not available or not valid|
-#        | 1 | GPS SPS Mode, fix Valid |
-#        | 2 | Differential GPS, SPS Mode, fix valid |
-#        | 3 - 5| Not supported |
-#        | 6 | Dead Reckoning Mode, fix valid |
+#        | 'A'| FiX IS VALID
+#        | 'V' | fix is not valid
+#
 
 # Import Python System Libraries
 import argparse
@@ -216,7 +214,11 @@ class ReceiveRFM69Data(threading.Thread):
                 packet_text = str(processed_packet, "utf-8")
                 # self.log(f'packet.txt={packet_text}')
                 packet_list = packet_text.split(',')
-                # self.log(f'packet_list={packet_list}')
+                self.log(f'packet_list={packet_list}')
+                time_of_fix = packet_list[radio_constants.TIME_OF_FIX]
+                packet_list[radio_constants.TIME_OF_FIX] = time_of_fix[0:2] + ":" + time_of_fix[2:4] + ":" + time_of_fix[4:]
+                date_of_fix = packet_list[radio_constants.FIX_DATE]
+                packet_list[radio_constants.FIX_DATE] = date_of_fix[0:2] + ":" + date_of_fix[2:4] + ':' + date_of_fix[4:]
 
                 # from nemas to hours minutes for latitude and longitude
                 latitude_unprocessed = packet_list[radio_constants.LATITUDE]
