@@ -14,14 +14,12 @@
 
 import threading
 import time
-import socket
 import radio_constants
 
 
-class LoggingThread(threading.Thread):
+class PositionLoggingThread(threading.Thread):
     """
-    this is a thread class for the bluetooth radio
-    When establishing a bluetooth socket, one uses the local bluetooth mac address
+    this is a thread class logs the position from the remote radio to a file
     """
     __slots__ = ['args', 'kwargs', 'lock_location_class', 'event', 'mac_address', 'timeout']
 
@@ -35,7 +33,7 @@ class LoggingThread(threading.Thread):
         :param kwargs: a dictionary that must contain the mac address and the timeout
                         example {'mac_address': xx:xx:xx:xx:xx, 'timeout':10}  the timeout is optional but the mac address is not
         """
-        super(LoggingThread, self).__init__(name=name, args=args, kwargs=kwargs)
+        super().__init__(name=name, args=args, kwargs=kwargs)
 
         if args is None:
             raise ValueError('Args cannot be None')
@@ -50,7 +48,6 @@ class LoggingThread(threading.Thread):
         self.log_file_name = self.args[5]
         self.name = name
         # truncate the log file to zero length
-
 
     def run(self):
         """
@@ -71,7 +68,7 @@ class LoggingThread(threading.Thread):
             packet_list = self.lock_location_class.data
             if not packet_list:
                 continue
-            callsign = packet_list[radio_constants.CALLSIGN]
+            # callsign = packet_list[radio_constants.CALLSIGN]
             if packet_list[radio_constants.POSITION_VALID] == 'V':
                 # the packet does not have a valid gps location
                 self.log('Position indicator ={}'.format(packet_list[radio_constants.POSITION_VALID]))
@@ -92,4 +89,3 @@ class LoggingThread(threading.Thread):
                     file.write(complete_log_string)
 
             time.sleep(self.sleep_time_in_sec)
-

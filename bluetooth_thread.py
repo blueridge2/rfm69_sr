@@ -37,7 +37,7 @@ class BluetoothTransmitThread(threading.Thread):
         :param kwargs: a dictionary that must contain the mac address and the timeout
                         example {'mac_address': xx:xx:xx:xx:xx, 'timeout':10}  the timeout is optional but the mac address is not
         """
-        super(BluetoothTransmitThread, self).__init__(name=name, args=args, kwargs=kwargs)
+        super().__init__(name=name, args=args, kwargs=kwargs)
 
         if args is None:
             raise ValueError('Args cannot be None')
@@ -73,10 +73,10 @@ class BluetoothTransmitThread(threading.Thread):
         self.log(f'local_socket={local_socket}  mac address = {mac_address}, type ={type(mac_address)}')
         try:
             local_socket.bind((mac_address, bluetooth_port))
-        except Exception as error:
+        except OSError as error:
             local_socket.close()
             if str(error) == 'bad bluetooth address':
-                raise ValueError('the bluetooth bind failed because of a bad bluetooth address')
+                raise OSError from error
             self.log(f'bluetooth bind socket failed error = {error}')
             return False, False, False
         else:
@@ -86,7 +86,7 @@ class BluetoothTransmitThread(threading.Thread):
 
         try:
             client_socket, address = local_socket.accept()
-        except Exception as error:
+        except OSError as error:
             self.log(f'bluetooth accept failed error = {error}')
             return False, False, False
         self.log(f'bluetooth accept passed client_socket = {client_socket}, address = {address}')
@@ -106,7 +106,7 @@ class BluetoothTransmitThread(threading.Thread):
         try:
             byte_data_array = bytearray(('{}\n'.format(data).encode('utf-8')))
             write_socket.send(byte_data_array)
-        except Exception:
+        except OSError:
             return False
         return True
 
@@ -150,6 +150,7 @@ class BluetoothTransmitThread(threading.Thread):
                 local_socket, bluetooth_write_socket, address_pair = self.bluetooth_connect(mac_address=self.mac_address)
                 if local_socket:
                     connected = True
+                    self.log(f"Paired with {address_pair}")
             elif connected:
                 # ok we are connected.
                 packet_list = self.lock_location_class.data
@@ -165,4 +166,3 @@ class BluetoothTransmitThread(threading.Thread):
                     continue
             # only delay if we are connected
             time.sleep(self.sleep_time_in_sec)
-

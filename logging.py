@@ -16,7 +16,7 @@ import datetime
 import threading
 
 
-class Logging(object):
+class Logging:
     """
     This is a simple logger for the rfm radio
     """
@@ -31,7 +31,6 @@ class Logging(object):
         Log the screen to the output
 
         """
-
         data = '' if data is None else data
         self.__lock.acquire()
         current_time = datetime.datetime.now()

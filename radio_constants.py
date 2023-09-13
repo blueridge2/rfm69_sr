@@ -14,6 +14,7 @@
 # THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #######################################################################################################################################
 from typing import Final
+
 CALLSIGN: Final[int] = 0
 TIME_OF_FIX: Final[int] = 1
 POSITION_VALID: Final[int] = 2
