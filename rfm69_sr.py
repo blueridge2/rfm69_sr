@@ -315,8 +315,6 @@ class Tracker:
         event = threading.Event()
         event.clear()
         # create the gps_loc_and location class
-
-
         # create and run the threads
         radio_args = (self.gps_lock_and_location, event, network, self.logger.log, self.args.sleep_time)
         # the * in front of the radio_args expands the list into arguments
