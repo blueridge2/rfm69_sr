@@ -4,3 +4,4 @@ __pycache__/**
 mac_address
 call_sign
 nohup.out
+docs/_build/
