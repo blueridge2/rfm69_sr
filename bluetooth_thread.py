@@ -114,6 +114,7 @@ class BluetoothTransmitThread(threading.Thread):
     def process_packet(packet_list, counter):
         """
         process the packet
+
         :param packet_list: a list that is either a packet or none
         :param counter a counter ot show movement on phone
         :return: a string with the packet in it

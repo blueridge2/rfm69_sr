@@ -51,7 +51,8 @@ import threading
 import re
 import sys
 import subprocess
-import logging
+# third party imports
+
 # Import Blinka Libraries
 # import the SSD1306 module.
 import adafruit_ssd1306
@@ -62,10 +63,12 @@ import board
 from digitalio import DigitalInOut
 from digitalio import Direction
 from digitalio import Pull
+# local imports
 import lock_and_data
 import bluetooth_thread
 import position_logging
 import radio_constants
+import simple_logging
 
 
 class DisplayLocation(threading.Thread):
@@ -160,9 +163,8 @@ class ReceiveRFM69Data(threading.Thread):
         The init function is empty for now.
 
         :param name: name the name of the thread
-        :param location_data: the class that contains the gps location
         :param args: the list containing the event, network, log_fnctin, and the sleep time
-        :param kwargs: not used at this time
+
 
         """
         super().__init__(name=name, args=args)
@@ -276,13 +278,13 @@ class Tracker:
         parser.add_argument('--rfcomm_port', type=int, default=4, help='The rfcomm port:  %(default)s)')
         parser.add_argument('--sleep_time', type=int, default=1, help='The default sleep time in the radio loop  %(default)s)')
         self.args = parser.parse_args()
-        self.logger = logging.Logging()
+        self.logger = simple_logging.Logging()
         self.gps_lock_and_location = lock_and_data.LockAndData()
 
     def run(self):
         """
         run the main program
-        :return: none
+
         """
         self.logger.log(f'dir{self.args}')
 
@@ -357,8 +359,9 @@ class Tracker:
 
     def get_local_bluetooth_mac_address(self):
         """
-        get the local bluetooth mack address by suing the hcitool
-        @returns the local bluetooth mac address, and return code
+            get the local bluetooth mack address by suing the hcitool
+
+            @returns the local bluetooth mac address, and return code
                 if the command succeeds, the result.returncode will be false, and the second parameter will have the mac address
                 If the command fails, the result.return code will be true and the second parameter will contain the result.returncode
         """

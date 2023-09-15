@@ -33,6 +33,7 @@ class LockAndData:  # pylint: disable=R0903
     def data(self):
         """
         A function to lock the data, read it unlock the data and return with the location
+
         :return a string with the gps location
         """
         self.__lock.acquire()
