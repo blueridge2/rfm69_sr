@@ -295,6 +295,7 @@ class Tracker:
             sys.exit(-1)
         if not os.path.exists(self.args.call_sign):
             self.logger.log('the file {} is not present'.format(self.args.call_sign))
+            self.logger.log('add a file called call_sign with your call sign')
             sys.exit(-1)
         if self.args.mac_address:
             mac_address = self.args.mac_address.upper()
