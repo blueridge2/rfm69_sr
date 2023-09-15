@@ -20,16 +20,41 @@ class Logging:
     """
     This is a simple logger for the rfm radio
     """
-    def __init__(self):
+    def __init__(self, log_level=None):
         """
         The init class for the lock and location
         """
         self.__lock = threading.Lock()
+        if log_level is None:
+            self.log_level = 'info'
+        else:
+            self.log_level = log_level
+        if log_level not in ['info', 'debug']:
+            raise ValueError(f'Log level {log_level} is not one of debug or info')
 
     def log(self,  data: str = None):
         """
         Log the screen to the output
 
+        :param data: string to be logged
+        """
+        if self.log_level == 'info':
+            self._log_data(data)
+
+    def debug(self,  data: str = None):
+        """
+        Log debug data
+
+        :param data: the data to print
+        """
+        if self.log_level == 'debug':
+            self._log_data(data)
+
+    def _log_data(self, data: str = None):
+        """
+         common writer
+
+        :param data: the data to print
         """
         data = '' if data is None else data
         self.__lock.acquire()

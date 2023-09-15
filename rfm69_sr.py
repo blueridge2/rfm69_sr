@@ -31,7 +31,6 @@
 # byte 1 is the source address( the sender/transmitter)
 # byte 2 not used by this program( a counter set by the sender/transmitter)
 # byte 3 status 0 = Data 0x80 is an ack
-
 #                                                                   utc time   val  latitude   n/s    longitude    e/w  date
 # valid packet minus the 4 byte header will look like ['KF4WBK', '171207.000', 'A', '3557.3377', 'N', '07901.1607', 'W', '120923']
 # an invalid packet minus the 4 byte header will look like ['kf4wbk', 'V']
@@ -74,7 +73,6 @@ import simple_logging
 class DisplayLocation(threading.Thread):
     """
     this is a thread class for the bluetooth radio
-
     """
     __slots__ = ['name', 'args', 'lock_location_class', 'event']
 
@@ -84,7 +82,7 @@ class DisplayLocation(threading.Thread):
 
         :param name: The name of the thread
         :param args: The args, gps_lock_and_location, event, network, log.log, args.sleep_time
-        :param kwargs: Noe used
+        :param kwargs: Not used
         """
         super().__init__(name=name, args=args)
 
@@ -103,8 +101,6 @@ class DisplayLocation(threading.Thread):
     def run(self):
         """
         This overrides run on the threading class
-
-        :return:
         """
         # Create the I2C interface.
         i2c = busio.I2C(board.SCL, board.SDA)
@@ -163,9 +159,7 @@ class ReceiveRFM69Data(threading.Thread):
         The init function is empty for now.
 
         :param name: name the name of the thread
-        :param args: the list containing the event, network, log_fnctin, and the sleep time
-
-
+        :param args: the list containing the event, network, log_function and the sleep time
         """
         super().__init__(name=name, args=args)
         self.name = name
@@ -355,7 +349,6 @@ class Tracker:
         except OSError as error:
             self.logger.log('file {} found our accessible, error=error={}'.format(filename, error))
             sys.exit(-1)
-
         return file_handle.read(length)
 
     def get_local_bluetooth_mac_address(self):
@@ -373,7 +366,7 @@ class Tracker:
             raise OSError from error
         self.logger.log(f'result return code={result.returncode}')
         if result.returncode:
-            self.logger(f'{result.args} command did not execute successfully')
+            self.logger.log(f'{result.args} command did not execute successfully')
             return True, result.returncode
         standard_out = result.stdout.splitlines()
         mac_address_line = standard_out[1].split()
