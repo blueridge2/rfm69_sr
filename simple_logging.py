@@ -24,13 +24,14 @@ class Logging:
         """
         The init class for the lock and location
         """
-        self.__lock = threading.Lock()
         if log_level is None:
             self.log_level = 'info'
         else:
             self.log_level = log_level
-        if log_level not in ['info', 'debug']:
+        if self.log_level not in ['info', 'debug']:
             raise ValueError(f'Log level {log_level} is not one of debug or info')
+        self.__lock = threading.Lock()
+
 
     def log(self,  data: str = None):
         """
