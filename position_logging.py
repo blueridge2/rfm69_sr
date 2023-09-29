@@ -43,7 +43,7 @@ class PositionLoggingThread(threading.Thread):
         self.lock_location_class = self.args[0]
         self.event = self.args[1]
         self.network = self.args[2]
-        self.log = self.args[3]
+        self.logger = self.args[3]
         self.sleep_time_in_sec = self.args[4]
         self.log_file_name = self.args[5]
         self.name = name
@@ -58,7 +58,7 @@ class PositionLoggingThread(threading.Thread):
         log_file_object = open(self.log_file_name, "w+")
         log_file_object.truncate()
         log_file_object.close()
-        self.log(f'logging thread {self.args}')
+        self.logger.info(f'logging thread {self.args}')
         counter = 0
         previous_lat_long = ""
         while True:
@@ -71,7 +71,7 @@ class PositionLoggingThread(threading.Thread):
             # callsign = packet_list[radio_constants.CALLSIGN]
             if packet_list[radio_constants.POSITION_VALID] == 'V':
                 # the packet does not have a valid gps location
-                self.log('Position indicator ={}'.format(packet_list[radio_constants.POSITION_VALID]))
+                self.logger.info('Position indicator ={}'.format(packet_list[radio_constants.POSITION_VALID]))
                 continue
 
             # latitude has the form of Latitude (DDmm.mm)
@@ -79,13 +79,13 @@ class PositionLoggingThread(threading.Thread):
             longitude = packet_list[radio_constants.LONGITUDE]
             lat_long = longitude + " " + latitude + '\n'
             if lat_long != previous_lat_long:
-                self.log(f'{self.name} {latitude}, {longitude} {counter}\r\n')
+                self.logger.info(f'{self.name} {latitude}, {longitude} {counter}\r\n')
                 previous_lat_long = lat_long
                 counter += 1
                 with open(self.log_file_name, "a") as file:
                     complete_log_string = packet_list[radio_constants.TIME_OF_FIX] + ' ' + \
                                           packet_list[radio_constants.FIX_DATE] + ' ' + lat_long
-                    self.log(f'thread_name = {self.name} {complete_log_string}')
+                    self.logger.info(f'thread_name = {self.name} {complete_log_string}')
                     file.write(complete_log_string)
 
             time.sleep(self.sleep_time_in_sec)

@@ -45,11 +45,12 @@
 # Import Python System Libraries
 import argparse
 import os
+from loguru import logger
 import time
-import threading
 import re
 import sys
 import subprocess
+import threading
 # third party imports
 
 # Import Blinka Libraries
@@ -67,7 +68,6 @@ import lock_and_data
 import bluetooth_thread
 import position_logging
 import radio_constants
-import simple_logging
 
 
 class DisplayLocation(threading.Thread):
@@ -154,7 +154,7 @@ class ReceiveRFM69Data(threading.Thread):
     # prevent adding external weak adds
     __slots__ = ['name', 'args', 'lock_location_class', 'event', 'network']
 
-    def __init__(self, name, *args):
+    def __init__(self, name: str, *args: list):
         """
         The init function is empty for now.
 
@@ -170,7 +170,7 @@ class ReceiveRFM69Data(threading.Thread):
         self.lock_location_class = self.args[0]
         self.event = self.args[1]
         self.network = self.args[2]
-        self.log = self.args[3]
+        self.logger = self.args[3]
         self.sleep_time_in_sec = self.args[4]
 
     def run(self):
@@ -211,7 +211,7 @@ class ReceiveRFM69Data(threading.Thread):
                 packet_text = str(processed_packet, "utf-8")
                 # self.log(f'packet.txt={packet_text}')
                 packet_list = packet_text.split(',')
-                self.log(f'packet_list={packet_list}')
+                self.logger.info(f'packet_list={packet_list}')
                 time_of_fix = packet_list[radio_constants.TIME_OF_FIX]
                 packet_list[radio_constants.TIME_OF_FIX] = time_of_fix[0:2] + ":" + time_of_fix[2:4] + ":" + time_of_fix[4:]
                 date_of_fix = packet_list[radio_constants.FIX_DATE]
@@ -231,11 +231,11 @@ class ReceiveRFM69Data(threading.Thread):
                 north_south = '' if packet_list[radio_constants.LATITUDE_NS] == 'N' else '-'
                 east_west = '' if packet_list[radio_constants.LONGITUDE_EW] == 'E' else '-'
 
-                self.log(f'thread_name={self.name}, position = {north_south}{latitude}, {east_west}{longitude} ')
+                self.logger.info(f'thread_name={self.name}, position = {north_south}{latitude}, {east_west}{longitude} ')
 
                 packet_list[radio_constants.LATITUDE] = north_south + latitude
                 packet_list[radio_constants.LONGITUDE] = east_west + longitude
-                # self.log(f'radio long={packet_list[radio_constants.LATITUDE]}, {packet_list[radio_constants.LONGITUDE]}')
+                #self.logger.info(f'radio long={packet_list[radio_constants.LATITUDE]}, {packet_list[radio_constants.LONGITUDE]}')
 
                 self.lock_location_class.data = packet_list
                 # see if the positon is not valid
@@ -248,7 +248,7 @@ class ReceiveRFM69Data(threading.Thread):
                 ack_data = bytes('a', 'utf-8')
                 # create of tuple of to, from, id, status,
                 # ack_tuple = (header[1], header[0], header[2], 0x80)
-                self.log('got a valid packet send ack')
+                self.logger.info('got a valid packet send ack')
                 rfm69.send(ack_data, destination=header[1], node=header[0], identifier=header[2], flags=0x80)
             time.sleep(self.sleep_time_in_sec)
 
@@ -272,7 +272,9 @@ class Tracker:
         parser.add_argument('--rfcomm_port', type=int, default=4, help='The rfcomm port:  %(default)s)')
         parser.add_argument('--sleep_time', type=int, default=1, help='The default sleep time in the radio loop  %(default)s)')
         self.args = parser.parse_args()
-        self.logger = simple_logging.Logging()
+        logger.remove(0)
+        logger.add(sys.stdout, format="{time} {level} {message}", level=self.args.level.upper())
+        self.logger = logger
         self.gps_lock_and_location = lock_and_data.LockAndData()
 
     def run(self):
@@ -280,20 +282,20 @@ class Tracker:
         run the main program
 
         """
-        self.logger.log(f'dir{self.args}')
+        self.logger.info(f'dir{self.args}')
 
         if not os.path.exists('font5x8.bin'):
-            self.logger.log('the file font5x8.bin is not present in the current directory.')
-            self.logger.log('use the command wget -O font5x8.bin \
+            self.logger.info('the file font5x8.bin is not present in the current directory.')
+            self.logger.info('use the command wget -O font5x8.bin \
                     https://github.com/adafruit/Adafruit_CircuitPython_framebuf/blob/master/examples/font5x8.bin?raw=true to download')
             sys.exit(-1)
         if not os.path.exists(self.args.call_sign):
-            self.logger.log('the file {} is not present'.format(self.args.call_sign))
-            self.logger.log('add a file called call_sign with your call sign')
+            self.logger.info('the file {} is not present'.format(self.args.call_sign))
+            self.logger.info('add a file called call_sign with your call sign')
             sys.exit(-1)
         if self.args.mac_address:
             mac_address = self.args.mac_address.upper()
-            self.logger.log(f"mac address = {mac_address}")
+            self.logger.info(f"mac address = {mac_address}")
             mac_reg_expression = r'[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}'
             re_match = re.match(mac_reg_expression, mac_address)
             if re_match is None:
@@ -303,7 +305,7 @@ class Tracker:
             command_failed, mac_address = self.get_local_bluetooth_mac_address()
             if command_failed:
                 raise ValueError('Failed to get the bluetooth mac address from the bluetooth device')
-        self.logger.log(f'bluetooth mac address = {mac_address}')
+        self.logger.info(f'bluetooth mac address = {mac_address}')
         # callsign_network = check_file(args.call_sign, radio_constants.CALLSIGN_LENGTH)
         network = self.args.sync_word.to_bytes(length=2, byteorder='big')
 
@@ -313,17 +315,17 @@ class Tracker:
         event.clear()
         # create the gps_loc_and location class
         # create and run the threads
-        radio_args = (self.gps_lock_and_location, event, network, self.logger.log, self.args.sleep_time)
+        radio_args = (self.gps_lock_and_location, event, network, self.logger, self.args.sleep_time)
         # the * in front of the radio_args expands the list into arguments
         run_radio = ReceiveRFM69Data('rfm_radio', *radio_args)
         run_display = DisplayLocation('display data', *radio_args)
 
-        bluetooth_args = (self. gps_lock_and_location, event, network, self.logger.log, self.args.sleep_time)
+        bluetooth_args = (self. gps_lock_and_location, event, network, self.logger, self.args.sleep_time)
         connect_bluetooth = bluetooth_thread.BluetoothTransmitThread('Bluetooth connection', *bluetooth_args, **dictionary_args)
         logging_args = radio_args
         logging_args = list(logging_args)
         logging_args.append(self.args.log_fn)
-        logging_thread = position_logging.PositionLoggingThread('positiion loggin thread', *logging_args)
+        logging_thread = position_logging.PositionLoggingThread('position logging thread', *logging_args)
 
         run_radio.start()
         run_display.start()
@@ -347,7 +349,7 @@ class Tracker:
         try:
             file_handle = open(filename, "rb")
         except OSError as error:
-            self.logger.log('file {} found our accessible, error=error={}'.format(filename, error))
+            self.logger.info('file {} found our accessible, error=error={}'.format(filename, error))
             sys.exit(-1)
         return file_handle.read(length)
 
@@ -362,16 +364,16 @@ class Tracker:
         try:
             result = subprocess.run(['hcitool', 'dev'], capture_output=True, text=True, check=True)
         except OSError as error:
-            self.logger.log(f'errpr = {error}')
+            self.logger.info(f'errpr = {error}')
             raise OSError from error
-        self.logger.log(f'result return code={result.returncode}')
+        self.logger.info(f'result return code={result.returncode}')
         if result.returncode:
-            self.logger.log(f'{result.args} command did not execute successfully')
+            self.logger.info(f'{result.args} command did not execute successfully')
             return True, result.returncode
         standard_out = result.stdout.splitlines()
         mac_address_line = standard_out[1].split()
         mac_address = mac_address_line[1]
-        self.logger.log(f'using mac_address={mac_address}')
+        self.logger.info(f'using mac_address={mac_address}')
         return result.returncode, mac_address
 
 

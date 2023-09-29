@@ -20,8 +20,6 @@ class LockAndData:  # pylint: disable=R0903
     A class to contain common data for the lock class and location
     """
 
-    __slots__ = ['__lock', '__data']
-
     def __init__(self, data=None):
         """
         The init class for the lock and location

@@ -47,7 +47,7 @@ class BluetoothTransmitThread(threading.Thread):
         self.lock_location_class = self.args[0]
         self.event = self.args[1]
         self.network = self.args[2]
-        self.log = self.args[3]
+        self.logger = self.args[3]
         self.sleep_time_in_sec = self.args[4]
         self.name = name
         self.mac_address = self.kwargs['MacAddress']
@@ -65,31 +65,31 @@ class BluetoothTransmitThread(threading.Thread):
                 note the client socket is used to write
         """
 
-        self.log(f'bluetooth_port = {bluetooth_port}, mac_address = {mac_address}, len={len(mac_address)}')
+        self.logger.info(f'bluetooth_port = {bluetooth_port}, mac_address = {mac_address}, len={len(mac_address)}')
         backlog = 1
         # size = 1024
         #
         local_socket = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
-        self.log(f'local_socket={local_socket}  mac address = {mac_address}, type ={type(mac_address)}')
+        self.logger.info(f'local_socket={local_socket}  mac address = {mac_address}, type ={type(mac_address)}')
         try:
             local_socket.bind((mac_address, bluetooth_port))
         except OSError as error:
             local_socket.close()
             if str(error) == 'bad bluetooth address':
                 raise OSError from error
-            self.log(f'bluetooth bind socket failed error = {error}')
+            self.logger.info(f'bluetooth bind socket failed error = {error}')
             return False, False, False
         else:
-            self.log("bind worked ok")
+            self.logger.info("bind worked ok")
         local_socket.listen(backlog)
         local_socket.settimeout(timeout)
 
         try:
             client_socket, address = local_socket.accept()
         except OSError as error:
-            self.log(f'bluetooth accept failed error = {error}')
+            self.logger.info(f'bluetooth accept failed error = {error}')
             return False, False, False
-        self.log(f'bluetooth accept passed client_socket = {client_socket}, address = {address}')
+        self.logger.info(f'bluetooth accept passed client_socket = {client_socket}, address = {address}')
         # the client socket is the socket to which the writes/reads will go
         # the address the remote bluetooth mac address and the rfcomm port
         return local_socket, client_socket, address
@@ -136,9 +136,9 @@ class BluetoothTransmitThread(threading.Thread):
 
     def run(self):
         """
-        This overrides run on the threading class
+            This overrides run on the threading class
 
-        :return:
+        :return: None
         """
         connected = False
         counter = 0
@@ -151,7 +151,7 @@ class BluetoothTransmitThread(threading.Thread):
                 local_socket, bluetooth_write_socket, address_pair = self.bluetooth_connect(mac_address=self.mac_address)
                 if local_socket:
                     connected = True
-                    self.log(f"Paired with {address_pair}")
+                    self.logger.info(f"Paired with {address_pair}")
             elif connected:
                 # ok we are connected.
                 packet_list = self.lock_location_class.data
