@@ -92,11 +92,7 @@ class DisplayLocation(threading.Thread):
         if args is None:
             raise ValueError()
         self.args = args
-        self.lock_location_class = self.args[0]
-        self.event = self.args[1]
-        self.network = self.args[2]
-        self.log = self.args[3]
-        self.sleep_time_in_sec = self.args[4]
+        self.lock_location_class, self.event, self.network, self.logger, self.sleep_time_in_sec = self.args
 
     def run(self):
         """

@@ -27,7 +27,7 @@ class BluetoothTransmitThread(threading.Thread):
     """
     __slots__ = ['args', 'kwargs', 'lock_location_class', 'event', 'mac_address', 'timeout']
 
-    def __init__(self, name, *args, **kwargs):
+    def __init__(self, name:str, *args: list, **kwargs: dict):
         """
         this is the init class for the thread
 
@@ -44,12 +44,8 @@ class BluetoothTransmitThread(threading.Thread):
 
         self.args = args
         self.kwargs = kwargs
-        self.lock_location_class = self.args[0]
-        self.event = self.args[1]
-        self.network = self.args[2]
-        self.logger = self.args[3]
-        self.sleep_time_in_sec = self.args[4]
-        self.name = name
+        self.lock_location_class, self.event, self.network, self.logger, self.sleep_time_in_sec = self.args
+        self.thread_name = name
         self.mac_address = self.kwargs['MacAddress']
         self.timeout = self.kwargs.get('TimeOut', 30)
         self.port = self.kwargs.get('RfcommPort', 4)
