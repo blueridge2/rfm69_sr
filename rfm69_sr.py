@@ -231,7 +231,7 @@ class ReceiveRFM69Data(threading.Thread):
 
                 packet_list[radio_constants.LATITUDE] = north_south + latitude
                 packet_list[radio_constants.LONGITUDE] = east_west + longitude
-                #self.logger.info(f'radio long={packet_list[radio_constants.LATITUDE]}, {packet_list[radio_constants.LONGITUDE]}')
+                self.logger.debug(f'radio long={packet_list[radio_constants.LATITUDE]}, {packet_list[radio_constants.LONGITUDE]}')
 
                 self.lock_location_class.data = packet_list
                 # see if the position is not valid
