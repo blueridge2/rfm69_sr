@@ -27,7 +27,7 @@ class BluetoothTransmitThread(threading.Thread):
     """
     __slots__ = ['args', 'kwargs', 'lock_location_class', 'event', 'mac_address', 'timeout']
 
-    def __init__(self, name:str, *args: list, **kwargs: dict):
+    def __init__(self, name: str, *args: list, **kwargs: dict):
         """
         this is the init class for the thread
 
@@ -57,7 +57,7 @@ class BluetoothTransmitThread(threading.Thread):
         :param mac_address: the mac address of the client to which we will connect
         :param bluetooth_port: the rfcomm bluetooth port, However, it must match the bluetooth_port used by the client.
         :param timeout: the length of time in seconds to wait for a connect
-        :return: at tuple with the local_socket, client_socket, and address if successful, False, false if it fails
+        :return: at tuple with the local_socket, client_socket, and remote bluetootk mac if successful, False, false if it fails
                 note the client socket is used to write
         """
 
@@ -81,21 +81,21 @@ class BluetoothTransmitThread(threading.Thread):
         local_socket.settimeout(timeout)
 
         try:
-            client_socket, address = local_socket.accept()
+            client_socket, remote_bluetooth_mac = local_socket.accept()
         except OSError as error:
             self.logger.info(f'bluetooth accept failed error = {error}')
             return False, False, False
-        self.logger.info(f'bluetooth accept passed client_socket = {client_socket}, address = {address}')
+        self.logger.info(f'bluetooth accept passed client_socket = {client_socket}, remote_bluetootk mac address = {mac_address}')
         # the client socket is the socket to which the writes/reads will go
         # the address the remote bluetooth mac address and the rfcomm port
-        return local_socket, client_socket, address
+        return local_socket, client_socket, remote_bluetooth_mac
 
     @staticmethod
     def send_data(write_socket, data):
         """
         send the data to the bluetooth client
 
-        :param write_socket: the client address to which to send the data
+        :param write_socket: the client remote_bluetooth_mac to which to send the data
         :param data: the data to send,should be a string
         :return True if the send is successful or False if not
         """
@@ -116,7 +116,7 @@ class BluetoothTransmitThread(threading.Thread):
         :return: a string with the packet in it
         """
         # short circuit will prevent the exception in the second half
-        # see if the positon is not valid
+        # see if the position is not valid
         if packet_list is None or packet_list[radio_constants.POSITION_VALID] == radio_constants.POSITION_NOT_VALID_VALUE:
             lat_long = 'No valid location'
         else:

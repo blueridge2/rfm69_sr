@@ -45,13 +45,13 @@
 # Import Python System Libraries
 import argparse
 import os
-from loguru import logger
-import time
 import re
-import sys
 import subprocess
+import sys
 import threading
+import time
 # third party imports
+from loguru import logger
 
 # Import Blinka Libraries
 # import the SSD1306 module.
@@ -234,7 +234,7 @@ class ReceiveRFM69Data(threading.Thread):
                 #self.logger.info(f'radio long={packet_list[radio_constants.LATITUDE]}, {packet_list[radio_constants.LONGITUDE]}')
 
                 self.lock_location_class.data = packet_list
-                # see if the positon is not valid
+                # see if the position is not valid
                 if packet_list[radio_constants.POSITION_VALID] == radio_constants.POSITION_NOT_VALID_VALUE:
                     # the packet does not have a valid gps location
                     self.lock_location_class.data = 'not valid'
