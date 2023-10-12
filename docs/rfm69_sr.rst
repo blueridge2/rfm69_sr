@@ -36,21 +36,7 @@ rfm69\_sr.radio\_constants module
    :undoc-members:
    :show-inheritance:
 
-rfm69\_sr.rfm69\_sr module
---------------------------
 
-.. automodule:: rfm69_sr.rfm69_sr
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-rfm69\_sr.simple\_logging module
---------------------------------
-
-.. automodule:: rfm69_sr.simple_logging
-   :members:
-   :undoc-members:
-   :show-inheritance:
 
 Module contents
 ---------------

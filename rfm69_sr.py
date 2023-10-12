@@ -76,7 +76,7 @@ class DisplayLocation(threading.Thread):
     """
     __slots__ = ['name', 'args', 'lock_location_class', 'event']
 
-    def __init__(self, name, *args):
+    def __init__(self, name: str, *args: list):
         """
         this is the init class for the thread
 
@@ -333,13 +333,14 @@ class Tracker:
         run_display.join()
         logging_thread.join()
 
-    def check_file(self, filename, length):
+    def check_file(self, filename: str, length: int):
         """
-        check a file for existence and print message
+            check a file for existence and print message
 
-        :param filename: the file name to check
-        :param length the number of characters to read
-        :return:
+            :param filename: the file name to check
+            :param length: the length of the file name
+            :returns: the number of characters read from the file as specified by the length parameter
+
         """
 
         try:
@@ -353,7 +354,7 @@ class Tracker:
         """
             get the local bluetooth mack address by suing the hcitool
 
-            @returns the local bluetooth mac address, and return code
+            :returns: the local bluetooth mac address, and return code
                 if the command succeeds, the result.returncode will be false, and the second parameter will have the mac address
                 If the command fails, the result.return code will be true and the second parameter will contain the result.returncode
         """
