@@ -29,7 +29,7 @@ class PositionLoggingThread(threading.Thread):
 
         :param name: The name of the thread
         :param args: The args, it must be a tuple consisting of
-                                (gps_lock_and_location, event, network, log.log, args.sleep_time)
+                                (gps_lock_and_location, event, network, log.log, args.sleep_time, log file name)
         :param kwargs: a dictionary that must contain the mac address and the timeout
                         example {'mac_address': xx:xx:xx:xx:xx, 'timeout':10}  the timeout is optional but the mac address is not
         """
@@ -40,12 +40,7 @@ class PositionLoggingThread(threading.Thread):
 
         self.args = args
         self.kwargs = kwargs
-        self.lock_location_class = self.args[0]
-        self.event = self.args[1]
-        self.network = self.args[2]
-        self.logger = self.args[3]
-        self.sleep_time_in_sec = self.args[4]
-        self.log_file_name = self.args[5]
+        self.lock_location_class, self.event, self.network, self.logger, self.sleep_time_in_sec, self.log_file_name = self.args
         self.name = name
         # truncate the log file to zero length
 

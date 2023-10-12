@@ -27,7 +27,7 @@ class BluetoothTransmitThread(threading.Thread):
     """
     __slots__ = ['args', 'kwargs', 'lock_location_class', 'event', 'mac_address', 'timeout']
 
-    def __init__(self, name: str, *args: list, **kwargs: dict):
+    def __init__(self, name: str, *args: list, **kwargs: dict) -> None:
         """
         this is the init class for the thread
 
@@ -50,14 +50,14 @@ class BluetoothTransmitThread(threading.Thread):
         self.timeout = self.kwargs.get('TimeOut', 30)
         self.port = self.kwargs.get('RfcommPort', 4)
 
-    def bluetooth_connect(self, mac_address, bluetooth_port: int = 4, timeout: int = 30):
+    def bluetooth_connect(self, mac_address: str, bluetooth_port: int = 4, timeout: int = 30):
         """
-        connect to blue tooth client
+        connect to bluetooth client
 
         :param mac_address: the mac address of the client to which we will connect
         :param bluetooth_port: the rfcomm bluetooth port, However, it must match the bluetooth_port used by the client.
-        :param timeout: the length of time in seconds to wait for a connect
-        :return: at tuple with the local_socket, client_socket, and remote bluetootk mac if successful, False, false if it fails
+        :param timeout: the length of time in seconds to wait for an accept
+        :return: at tuple with the local_socket, client_socket, and remote bluetooth mac if successful, False, false if it fails
                 note the client socket is used to write
         """
 
@@ -130,9 +130,9 @@ class BluetoothTransmitThread(threading.Thread):
             lat_long = longitude + ', ' + latitude + '{}'.format(' ') + packet_list[radio_constants.POSITION_VALID] + ' {}'.format(counter)
         return lat_long
 
-    def run(self):
+    def run(self) -> None:
         """
-            This overrides run on the threading class
+        This overrides run on the threading class
 
         :return: None
         """

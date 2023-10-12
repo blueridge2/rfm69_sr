@@ -52,7 +52,6 @@ import threading
 import time
 # third party imports
 from loguru import logger
-
 # Import Blinka Libraries
 # import the SSD1306 module.
 import adafruit_ssd1306
@@ -145,12 +144,12 @@ class DisplayLocation(threading.Thread):
 
 class ReceiveRFM69Data(threading.Thread):
     """
-    the class to receive from th rfm69 radio module
+    the class to receive from th rfm69 radio module on the feather
     """
     # prevent adding external weak adds
     __slots__ = ['name', 'args', 'lock_location_class', 'event', 'network']
 
-    def __init__(self, name: str, *args: list):
+    def __init__(self, name: str, *args: list) -> None:
         """
         The init function is empty for now.
 
@@ -254,7 +253,7 @@ class Tracker:
     this is the base tracker object
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         the init class
         """
