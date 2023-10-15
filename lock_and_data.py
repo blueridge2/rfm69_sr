@@ -17,7 +17,7 @@ import threading
 
 class LockAndData:  # pylint: disable=R0903
     """
-    A class to contain common data for the lock class and location
+    A class to contain common data amd access with a lock.  ?This is thread safe
     """
 
     def __init__(self, data=None):
@@ -28,7 +28,7 @@ class LockAndData:  # pylint: disable=R0903
         self.__data = data
 
     @property
-    def data(self):
+    def data(self) -> str:
         """
         A function to lock the data, read it unlock the data and return with the location
 
@@ -40,7 +40,7 @@ class LockAndData:  # pylint: disable=R0903
         return __location
 
     @data.setter
-    def data(self, data):
+    def data(self, data) -> None:
         """
         A function to set the gps location
 

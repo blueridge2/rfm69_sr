@@ -14,7 +14,9 @@
 # THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #######################################################################################################################################
 
-# This is a program to read data sent by the Arduino program sketch_apr11a
+# This is a program to read data sent by the Arduino program which sends gps location of an rfm69 radio
+# that project is at https://github.com/blueridge2/arduino_rfm69_gps_transmitter/tree/master/rfm69_gps
+#
 # Learn Guide: https://learn.adafruit.com/lora-and-lorawan-for-raspberry-pi
 # Author: Brent Rubell for Adafruit Industries
 # Author: Ralph Blach reworked for my purposes
