@@ -40,7 +40,7 @@ class PositionLoggingThread(threading.Thread):
 
         self.args = args
         self.kwargs = kwargs
-        self.lock_location_class, self.event, self.network, self.logger, self.sleep_time_in_sec, self.log_file_name = self.args
+        self.lock_location_class, self.event, self.network, self.logger, self.sleep_time_in_sec, self.log_file_name = self.args  # pylint: disable=W0632
         self.name = name
         # truncate the log file to zero length
 

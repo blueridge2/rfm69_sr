@@ -44,7 +44,7 @@ class BluetoothTransmitThread(threading.Thread):
 
         self.args = args
         self.kwargs = kwargs
-        self.lock_location_class, self.event, self.network, self.logger, self.sleep_time_in_sec = self.args
+        self.lock_location_class, self.event, self.network, self.logger, self.sleep_time_in_sec = self.args  # pylint: disable=W0632
         self.thread_name = name
         self.mac_address = self.kwargs['MacAddress']
         self.timeout = self.kwargs.get('TimeOut', 30)

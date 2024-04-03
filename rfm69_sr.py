@@ -96,7 +96,7 @@ class DisplayLocation(threading.Thread):
         if args is None:
             raise ValueError()
         self.args = args
-        self.lock_location_class, self.event, self.network, self.logger, self.sleep_time_in_sec = self.args
+        self.lock_location_class, self.event, self.network, self.logger, self.sleep_time_in_sec = self.args  # pylint: disable=W0632
 
     def run(self):
         """
@@ -258,14 +258,15 @@ class Tracker:
     this is the base tracker object
     """
 
-    def __init__(self, name: str=None) -> None:
+    def __init__(self, name: str = None) -> None:
         """
         the init class
         """
         self.logger = None
         parser = argparse.ArgumentParser()
         parser.add_argument('--level', choices=['info', 'debug'], default='debug', help='The debug log level (default: %(default)s)')
-        parser.add_argument('--position_log_file', type=str, default='/tmp/rfm_radio.log', help='Default log for the position - (default: %(default)s)')
+        parser.add_argument('--position_log_file', type=str, default='/tmp/rfm_radio.log',
+                            help='Default log for the position - (default: %(default)s)')
         parser.add_argument('--call_sign', type=str, default='./call_sign', help='Binary file that contains the call sign:  %(default)s)')
         parser.add_argument('--sync_word', type=int, default=0x2dd4, help='Binary file that contains the network default:  %(default)s)')
         parser.add_argument('--mac_address', type=str, default=None, help='Siring that has the Mac address fo the bluetooth device,:  %(default)s)')
@@ -291,7 +292,8 @@ class Tracker:
         self.gps_lock_and_location = lock_and_data.LockAndData()
 
     @staticmethod
-    def setup_logging(name: str = 'main', log_to_file: bool = False, log_file_name: str = "rfm69_log.log", log_level: int = logging.INFO) -> logging.getLogger:
+    def setup_logging(name: str = 'main', log_to_file: bool = False, log_file_name: str = "rfm69_log.log",
+                      log_level: int = logging.INFO) -> logging.getLogger:
         """
         Set up the logging for the program, this uses a queue config so the that log IO does not block.  the default logging level is info
 
@@ -337,7 +339,7 @@ class Tracker:
         run the main program
 
         """
-        self.logger.info(f'dir{self.args}')
+        self.logger.info('dir = %s', self.args)
 
         if not os.path.exists('font5x8.bin'):
             self.logger.info('the file font5x8.bin is not present in the current directory.')
@@ -345,12 +347,12 @@ class Tracker:
                     https://github.com/adafruit/Adafruit_CircuitPython_framebuf/blob/master/examples/font5x8.bin?raw=true to download')
             sys.exit(-1)
         if not os.path.exists(self.args.call_sign):
-            self.logger.info('the file {} is not present'.format(self.args.call_sign))
+            self.logger.info('The file %s is not present', self.args.call_sign)
             self.logger.info('add a file called call_sign with your call sign')
             sys.exit(-1)
         if self.args.mac_address:
             mac_address = self.args.mac_address.upper()
-            self.logger.info(f"mac address = {mac_address}")
+            self.logger.info("mac address = %s ", mac_address)
             mac_reg_expression = r'[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}:[A-F0-9]{2}'
             re_match = re.match(mac_reg_expression, mac_address)
             if re_match is None:
@@ -360,7 +362,7 @@ class Tracker:
             command_failed, mac_address = self.get_local_bluetooth_mac_address()
             if command_failed:
                 raise ValueError('Failed to get the bluetooth mac address from the bluetooth device')
-        self.logger.info(f'bluetooth mac address = {mac_address}')
+        self.logger.info('bluetooth mac address = %s', mac_address)
         # callsign_network = check_file(args.call_sign, radio_constants.CALLSIGN_LENGTH)
         network = self.args.sync_word.to_bytes(length=2, byteorder='big')
 
@@ -405,7 +407,7 @@ class Tracker:
         try:
             file_handle = open(filename, "rb")
         except OSError as error:
-            self.logger.info('file {} found our accessible, error=error={}'.format(filename, error))
+            self.logger.info('file %s found our accessible, error=%s', filename, error)
             sys.exit(-1)
         return file_handle.read(length)
 
@@ -420,16 +422,16 @@ class Tracker:
         try:
             result = subprocess.run(['hcitool', 'dev'], capture_output=True, text=True, check=True)
         except OSError as error:
-            self.logger.info(f'errpr = {error}')
+            self.logger.info('error = %s', error)
             raise OSError from error
-        self.logger.info(f'result return code={result.returncode}')
+        self.logger.info('result return code=%s', result.returncode)
         if result.returncode:
-            self.logger.info(f'{result.args} command did not execute successfully')
+            self.logger.info('%s  command did not execute successfully', result.args)
             return True, result.returncode
         standard_out = result.stdout.splitlines()
         mac_address_line = standard_out[1].split()
         mac_address = mac_address_line[1]
-        self.logger.info(f'using mac_address={mac_address}')
+        self.logger.info('Using mac_address=%s', mac_address)
         return result.returncode, mac_address
 
 
