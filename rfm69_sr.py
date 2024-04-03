@@ -46,14 +46,17 @@
 
 # Import Python System Libraries
 import argparse
+import atexit
+import logging
+import logging.config
+import logging.handlers
+import queue
 import os
 import re
 import subprocess
 import sys
 import threading
 import time
-# third party imports
-from loguru import logger
 # Import Blinka Libraries
 # import the SSD1306 module.
 import adafruit_ssd1306
@@ -255,24 +258,79 @@ class Tracker:
     this is the base tracker object
     """
 
-    def __init__(self) -> None:
+    def __init__(self, name: str=None) -> None:
         """
         the init class
         """
         self.logger = None
         parser = argparse.ArgumentParser()
         parser.add_argument('--level', choices=['info', 'debug'], default='debug', help='The debug log level (default: %(default)s)')
-        parser.add_argument('--log_fn', type=str, default='/tmp/rfm_radio.log', help='Default log file name - (default: %(default)s)')
+        parser.add_argument('--position_log_file', type=str, default='/tmp/rfm_radio.log', help='Default log for the position - (default: %(default)s)')
         parser.add_argument('--call_sign', type=str, default='./call_sign', help='Binary file that contains the call sign:  %(default)s)')
         parser.add_argument('--sync_word', type=int, default=0x2dd4, help='Binary file that contains the network default:  %(default)s)')
         parser.add_argument('--mac_address', type=str, default=None, help='Siring that has the Mac address fo the bluetooth device,:  %(default)s)')
         parser.add_argument('--rfcomm_port', type=int, default=4, help='The rfcomm port:  %(default)s)')
         parser.add_argument('--sleep_time', type=int, default=1, help='The default sleep time in the radio loop  %(default)s)')
+        parser.add_argument('--log_level', default='info', choices=['info', 'debug', 'warn'], help='the log_level default = %(default)s)')
+        parser.add_argument('--log_to_file', action='store_true', default=False, help='if true, log to a file default = %(default)s')
+        parser.add_argument('--log_file_name', type=str, default='rfm_69_messages.log', help='The default log file name, default = %(default)s')
+        args = parser.parse_args()
+        print(f'name = {__name__}')
+        if args.log_level == 'info':
+            log_level = logging.INFO
+        elif args.log_level == 'debug':
+            log_level = logging.DEBUG
+        elif args.log_level == 'warn':
+            log_level = logging.WARNING
+        else:
+            log_level = logging.INFO
         self.args = parser.parse_args()
-        logger.remove(0)
-        logger.add(sys.stdout, format="{time} {level} {message}", level=self.args.level.upper())
+        logger = self.setup_logging(name=name, log_to_file=args.log_to_file, log_level=log_level, log_file_name=args.log_file_name)
+
         self.logger = logger
         self.gps_lock_and_location = lock_and_data.LockAndData()
+
+    @staticmethod
+    def setup_logging(name: str = 'main', log_to_file: bool = False, log_file_name: str = "rfm69_log.log", log_level: int = logging.INFO) -> logging.getLogger:
+        """
+        Set up the logging for the program, this uses a queue config so the that log IO does not block.  the default logging level is info
+
+        :param name: the name of the logger
+        :param log_file_name: the name of the log file, the mode is overwrite
+        :param log_to_file: if true log to a file
+        :param log_level: the debug level of the logger
+
+        :return: the logger created
+        """
+        log_format = '%(asctime)s-%(name)s  %(levelname)s %(message)s'
+        logging.basicConfig(level=log_level)
+        que = queue.Queue(-1)
+        handler_list = []
+        logger = logging.getLogger(name)
+        formatter = logging.Formatter(log_format)
+        # for this to work, do not add the handlers to the logger, we add them to the listener.
+        # the listener then gets added to the logger
+        if log_to_file:
+            file_handler = logging.FileHandler(log_file_name, mode='w')
+            file_handler.setLevel(log_level)
+            file_handler.setFormatter(formatter)
+            handler_list.append(file_handler)
+
+        stream_handler = logging.StreamHandler()
+        stream_handler.setLevel(log_level)
+        stream_handler.setFormatter(formatter)
+        handler_list.append(stream_handler)
+
+        logger.propagate = False
+
+        # add the list of handlers to the queue listener
+        queue_handler = logging.handlers.QueueHandler(que)
+        logger.addHandler(queue_handler)
+        listener = logging.handlers.QueueListener(que, *handler_list, respect_handler_level=True)
+
+        listener.start()
+        atexit.register(listener.stop)
+        return logger
 
     def run(self):
         """
@@ -321,7 +379,7 @@ class Tracker:
         connect_bluetooth = bluetooth_thread.BluetoothTransmitThread('Bluetooth connection', *bluetooth_args, **dictionary_args)
         logging_args = radio_args
         logging_args = list(logging_args)
-        logging_args.append(self.args.log_fn)
+        logging_args.append(self.args.position_log_file)
         logging_thread = position_logging.PositionLoggingThread('position logging thread', *logging_args)
 
         run_radio.start()
@@ -376,5 +434,5 @@ class Tracker:
 
 
 if __name__ == "__main__":
-    tracker = Tracker()
+    tracker = Tracker(name=__name__)
     tracker.run()
