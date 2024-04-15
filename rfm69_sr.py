@@ -43,7 +43,10 @@
 #        | 'A'| FiX IS VALID
 #        | 'V' | fix is not valid
 #
-
+# this depends on adafruit modules.  Install these modules with the following commands
+# sudo apt-get install python3-pil
+# pip3 install  adafruit-circuitpython-ssd1306 --break-system-packages
+# pip3 install adafruit-circuitpython-rfm69 --break-system-packages
 # Import Python System Libraries
 import argparse
 import atexit
@@ -62,6 +65,7 @@ import time
 import adafruit_ssd1306
 # Import the RFM69 radio module.
 import adafruit_rfm69
+# import the adafruit board io libraries.
 import busio
 import board
 from digitalio import DigitalInOut
@@ -264,7 +268,7 @@ class Tracker:
         """
         self.logger = None
         parser = argparse.ArgumentParser()
-        parser.add_argument('--level', choices=['info', 'debug'], default='debug', help='The debug log level (default: %(default)s)')
+        # parser.add_argument('--level', choices=['info', 'debug'], default='debug', help='The debug log level (default: %(default)s)')
         parser.add_argument('--position_log_file', type=str, default='/tmp/rfm_radio.log',
                             help='Default log for the position - (default: %(default)s)')
         parser.add_argument('--call_sign', type=str, default='./call_sign', help='Binary file that contains the call sign:  %(default)s)')
