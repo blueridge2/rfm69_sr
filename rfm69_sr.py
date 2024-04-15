@@ -23,8 +23,10 @@
 # you will need to download font5x8.bin from https://github.com/adafruit/Adafruit_CircuitPython_framebuf/raw/master/examples/font5x8.bin
 # you could use  wget -O font5x8.bin https://github.com/adafruit/Adafruit_CircuitPython_framebuf/blob/master/examples/font5x8.bin?raw=true
 #
+# you will need to pair the phone to the bluetooth to a android phone
+# follow the directions at  the first time follow the directions https://bluedot.readthedocs.io/en/latest/pairpiandroid.html
 # the callsign and rfm69 radio network are stored in a file called callsign.  The first six bytes are the callsign and the next two bytes
-# are the radio network.  Only the first 8 bytes of the file are used.  The if thee call sign is less than 6 bytes, then it must be padded with
+# are the radio network.  Only the first 8 bytes of the file are used.  The if the call sign is less than 6 bytes, then it must be padded with
 # spaces
 # the bluetooth mac address is the Mac address of the local bluetooth device and this is gotten by using hci tool.
 #
@@ -48,6 +50,9 @@
 # pip3 install  adafruit-circuitpython-ssd1306 --break-system-packages
 # pip3 install adafruit-circuitpython-rfm69 --break-system-packages
 # Import Python System Libraries
+
+
+
 import argparse
 import atexit
 import logging
@@ -62,9 +67,20 @@ import threading
 import time
 # Import Blinka Libraries
 # import the SSD1306 module.
-import adafruit_ssd1306
+try:
+    import adafruit_ssd1306
+except ModuleNotFoundError as error:
+    print(f'adafruit_ssd1306 not found, use the command')
+    print(f'use the command pip3 install  adafruit-circuitpython-ssd1306 [--break-system-packages] to load package')
+    raise error
+
 # Import the RFM69 radio module.
-import adafruit_rfm69
+try:
+    import adafruit_rfm69
+except ModuleNotFoundError as error:
+    print(f'adafruit_rfm69 not found, use the command')
+    print(f'use the command pip3 install adafruit-circuitpython-rfm69  [--break-system-packages] to load package')
+    raise error
 # import the adafruit board io libraries.
 import busio
 import board
