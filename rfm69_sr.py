@@ -28,7 +28,7 @@
 # the callsign and rfm69 radio network are stored in a file called callsign.  The first six bytes are the callsign and the next two bytes
 # are the radio network.  Only the first 8 bytes of the file are used.  The if the call sign is less than 6 bytes, then it must be padded with
 # spaces
-# the bluetooth mac address is the Mac address of the local bluetooth device and this is gotten by using hci tool.
+# The bluetooth mac address is the Mac address of the local bluetooth device and this is gotten by using hci tool.
 #
 # The header is 4 bytes
 # byte 0 is the target address,( this machine as the receiver)
@@ -51,8 +51,6 @@
 # pip3 install adafruit-circuitpython-rfm69 --break-system-packages
 # Import Python System Libraries
 
-
-
 import argparse
 import atexit
 import logging
@@ -65,7 +63,7 @@ import subprocess
 import sys
 import threading
 import time
-# Import Blinka Libraries
+
 # import the SSD1306 module.
 try:
     import adafruit_ssd1306
@@ -82,11 +80,20 @@ except ModuleNotFoundError as error:
     print(f'use the command pip3 install adafruit-circuitpython-rfm69  [--break-system-packages] to load package')
     raise error
 # import the adafruit board io libraries.
-import busio
-import board
-from digitalio import DigitalInOut
-from digitalio import Direction
-from digitalio import Pull
+try:
+    import busio
+    import board
+    from digitalio import DigitalInOut
+    from digitalio import Direction
+    from digitalio import Pull
+except ModuleNotFoundError as error:
+    print('one of the above modules not found')
+    print('sudo apt-get install -y i2c-tools libgpiod-dev python3-libgpiod')
+    print('pip3 install --upgrade RPi.GPIO [--break-system-packages]')
+    print('pip3 install --upgrade adafruit-blinka [--break-system-packages]')
+    print(f'module not found error {error}')
+    raise error
+
 # local imports
 import lock_and_data
 import bluetooth_thread
