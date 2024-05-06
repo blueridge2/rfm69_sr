@@ -67,18 +67,18 @@ import time
 # import the SSD1306 module.
 try:
     import adafruit_ssd1306
-except ModuleNotFoundError as error:
-    print(f'adafruit_ssd1306 not found, use the command')
-    print(f'use the command pip3 install  adafruit-circuitpython-ssd1306 [--break-system-packages] to load package')
-    raise error
+except ModuleNotFoundError as import_error:
+    print('adafruit_ssd1306 not found, use the command')
+    print('use the command pip3 install  adafruit-circuitpython-ssd1306 [--break-system-packages] to load package')
+    raise import_error
 
 # Import the RFM69 radio module.
 try:
     import adafruit_rfm69
-except ModuleNotFoundError as error:
-    print(f'adafruit_rfm69 not found, use the command')
-    print(f'use the command pip3 install adafruit-circuitpython-rfm69  [--break-system-packages] to load package')
-    raise error
+except ModuleNotFoundError as import_error:
+    print('adafruit_rfm69 not found, use the command')
+    print('use the command pip3 install adafruit-circuitpython-rfm69  [--break-system-packages] to load package')
+    raise import_error
 # import the adafruit board io libraries.
 try:
     import busio
@@ -86,13 +86,13 @@ try:
     from digitalio import DigitalInOut
     from digitalio import Direction
     from digitalio import Pull
-except ModuleNotFoundError as error:
+except ModuleNotFoundError as import_error:
     print('one of the above modules not found')
     print('sudo apt-get install -y i2c-tools libgpiod-dev python3-libgpiod')
     print('pip3 install --upgrade RPi.GPIO [--break-system-packages]')
     print('pip3 install --upgrade adafruit-blinka [--break-system-packages]')
-    print(f'module not found error {error}')
-    raise error
+    print(f'module not found error {import_error}')
+    raise import_error
 
 # local imports
 import lock_and_data
@@ -146,7 +146,7 @@ class DisplayLocation(threading.Thread):
             packet_list = self.lock_location_class.data
 
             if packet_list is None:
-                display.text('not valid {}'.format('no packet'), 0, 8, 1)
+                display.text('not valid no_packet', 0, 8, 1)
                 display.show()
                 time.sleep(1)
                 continue
@@ -155,7 +155,7 @@ class DisplayLocation(threading.Thread):
             # test to see if the position is valid
             if packet_list[radio_constants.POSITION_VALID] == radio_constants.POSITION_NOT_VALID_VALUE:
                 # the packet does not have a valid gps location
-                display.text('not valid {}'.format(callsign), 0, 8, 1)
+                display.text(f'not valid {callsign}', 0, 8, 1)
                 display.show()
                 continue
 
@@ -165,7 +165,7 @@ class DisplayLocation(threading.Thread):
 
             display.text(latitude, 0, 8, 1)
             display.text(longitude, 0, 16, 1)
-            display.text('pv={}, {} {:01x}'.format(packet_list[radio_constants.POSITION_VALID], callsign, counter & 0xf), 0, 24, 1)
+            display.text(f'pv={packet_list[radio_constants.POSITION_VALID]}, {callsign} {counter & 0xf:01x}', 0, 24, 1)
             display.show()
             counter = counter + 1 if counter < 16 else 0
             # test to see if is time to exit
@@ -197,7 +197,7 @@ class ReceiveRFM69Data(threading.Thread):
         self.lock_location_class = self.args[0]
         self.event = self.args[1]
         self.network = self.args[2]
-        self.logger = self.args[3]
+        self.logger: logging = self.args[3]
         self.sleep_time_in_sec = self.args[4]
 
     def run(self):
@@ -249,11 +249,12 @@ class ReceiveRFM69Data(threading.Thread):
                 longitude_unprocessed = packet_list[radio_constants.LONGITUDE]
                 lat_degrees = latitude_unprocessed[:2]
                 lat_ms = latitude_unprocessed[2:]
-                latitude = '{:2.7f}'.format((float(lat_degrees) + float(lat_ms) / 60)).zfill(9)
+                latitude = f'{float(lat_degrees) +  float(lat_ms) / 60:2.7f}'.zfill(9)
 
                 long_degrees = longitude_unprocessed[:3]
                 long_ms = longitude_unprocessed[3:]
-                longitude = "{:3.7f}".format(float(long_degrees) + float(long_ms) / 60).zfill(10)
+                # longitude = "{:3.7f}".format(float(long_degrees) + float(long_ms) / 60).zfill(10)
+                longitude = f"{float(long_degrees) + float(long_ms) / 60:3.7f}".zfill(10)
 
                 north_south = '' if packet_list[radio_constants.LATITUDE_NS] == 'N' else '-'
                 east_west = '' if packet_list[radio_constants.LONGITUDE_EW] == 'E' else '-'
@@ -432,9 +433,9 @@ class Tracker:
         """
 
         try:
-            file_handle = open(filename, "rb")
-        except OSError as error:
-            self.logger.info('file %s found our accessible, error=%s', filename, error)
+            file_handle = open(filename, "rb")   # pylint: disable=R1732
+        except OSError as os_error:
+            self.logger.info('file %s found our accessible, error=%s', filename, os_error)
             sys.exit(-1)
         return file_handle.read(length)
 

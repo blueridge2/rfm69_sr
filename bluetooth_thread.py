@@ -67,7 +67,7 @@ class BluetoothTransmitThread(threading.Thread):
         #
         local_socket = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
         self.logger.info(f'local_socket={local_socket}  mac address = {mac_address}, type ={type(mac_address)}')
-        try:
+        try:  # pylint: disable=R1705
             local_socket.bind((mac_address, bluetooth_port))
         except OSError as error:
             local_socket.close()
@@ -75,7 +75,7 @@ class BluetoothTransmitThread(threading.Thread):
                 raise OSError from error
             self.logger.info(f'bluetooth bind socket failed error = {error}')
             return False, False, False
-        else:
+        else:       # pylint: disable=R1705
             self.logger.info("bind worked ok")
         local_socket.listen(backlog)
         local_socket.settimeout(timeout)
@@ -100,7 +100,7 @@ class BluetoothTransmitThread(threading.Thread):
         :return True if the send is successful or False if not
         """
         try:
-            byte_data_array = bytearray(('{}\n'.format(data).encode('utf-8')))
+            byte_data_array = bytearray((f'{data}\n'.encode('utf-8')))
             write_socket.send(byte_data_array)
         except OSError:
             return False
@@ -127,7 +127,8 @@ class BluetoothTransmitThread(threading.Thread):
             longitude = packet_list[radio_constants.LONGITUDE]
 
             # send the position fix indicator
-            lat_long = longitude + ', ' + latitude + '{}'.format(' ') + packet_list[radio_constants.POSITION_VALID] + ' {}'.format(counter)
+            counter = '' if counter is None else f' {counter}'
+            lat_long = longitude + ', ' + latitude + ' ' + packet_list[radio_constants.POSITION_VALID] + counter
         return lat_long
 
     def run(self) -> None:

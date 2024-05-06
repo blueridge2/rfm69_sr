@@ -32,9 +32,9 @@ class LockAndData:  # pylint: disable=R0903
         """
         A function to lock the data, read it unlock the data and return with the location
 
-        :return a string with the gps location
+        :return: a string with the gps location
         """
-        self.__lock.acquire()
+        self.__lock.acquire()   # pylint: disable=R1732
         __location = self.__data
         self.__lock.release()
         return __location
@@ -44,9 +44,9 @@ class LockAndData:  # pylint: disable=R0903
         """
         A function to set the gps location
 
-        :param data: the to saved in the class
+        :param data: The to be saved in the class
         :return: None
         """
-        self.__lock.acquire()
+        self.__lock.acquire()  # pylint: disable=R1732
         self.__data = data
         self.__lock.release()

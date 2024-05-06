@@ -40,9 +40,9 @@ class PositionLoggingThread(threading.Thread):
 
         self.args = args
         self.kwargs = kwargs
-        self.lock_location_class, self.event, self.network, self.logger, self.sleep_time_in_sec, self.log_file_name = self.args  # pylint: disable=W0632
+        (self.lock_location_class, self.event, self.network, self.logger,   # pylint: disable=W0632
+         self.sleep_time_in_sec, self.log_file_name) = self.args  # pylint: disable=W0632
         self.name = name
-        # truncate the log file to zero length
 
     def run(self):
         """
@@ -50,7 +50,7 @@ class PositionLoggingThread(threading.Thread):
 
         :return:
         """
-        log_file_object = open(self.log_file_name, "w+")
+        log_file_object = open(self.log_file_name, "w+", encoding='utf-8')   # pylint: disable=R1732
         log_file_object.truncate()
         log_file_object.close()
         self.logger.info(f'logging thread {self.args}')
@@ -66,7 +66,7 @@ class PositionLoggingThread(threading.Thread):
             # callsign = packet_list[radio_constants.CALLSIGN]
             if packet_list[radio_constants.POSITION_VALID] == 'V':
                 # the packet does not have a valid gps location
-                self.logger.info('Position indicator ={}'.format(packet_list[radio_constants.POSITION_VALID]))
+                self.logger.info(f'Position indicator ={(packet_list[radio_constants.POSITION_VALID])}')
                 continue
 
             # latitude has the form of Latitude (DDmm.mm)
@@ -77,7 +77,7 @@ class PositionLoggingThread(threading.Thread):
                 self.logger.info(f'{self.name} {latitude}, {longitude} {counter}\r\n')
                 previous_lat_long = lat_long
                 counter += 1
-                with open(self.log_file_name, "a") as file:
+                with open(self.log_file_name, "a", encoding='utf-8') as file:
                     complete_log_string = packet_list[radio_constants.TIME_OF_FIX] + ' ' + \
                                           packet_list[radio_constants.FIX_DATE] + ' ' + lat_long
                     self.logger.info(f'thread_name = {self.name} {complete_log_string}')
